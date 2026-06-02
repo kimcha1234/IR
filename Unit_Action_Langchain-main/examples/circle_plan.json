@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0",
+  "source_command": "중앙에 반지름 5cm짜리 원을 그려줘",
+  "goal": {
+    "shape_type": "circle",
+    "center": {
+      "x": 0.0,
+      "y": 0.0,
+      "unit": "m"
+    },
+    "radius_m": 0.05,
+    "side_length_m": null,
+    "size_m": 0.1,
+    "orientation_rad": 0.0,
+    "letter": null,
+    "frame": "board",
+    "assumptions": [
+      "center was not specified; default board center was used",
+      "position_hint preserved: 중앙"
+    ],
+    "warnings": [
+      "robot reachability and IK feasibility are not checked by the LangChain planner"
+    ]
+  },
+  "strokes": [
+    {
+      "type": "arc",
+      "stroke_id": "stroke_001",
+      "center": {
+        "x": 0.0,
+        "y": 0.0,
+        "unit": "m"
+      },
+      "radius_m": 0.05,
+      "start_angle_rad": 0.0,
+      "end_angle_rad": 6.283185307179586,
+      "direction": "ccw"
+    }
+  ],
+  "actions": [
+    {
+      "name": "move_to_start",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "target": {
+          "x": 0.05,
+          "y": 0.0,
+          "z": 0.03,
+          "unit": "m"
+        },
+        "hover_height_m": 0.03,
+        "note": "free-space move; kinematics module converts board frame to base frame"
+      }
+    },
+    {
+      "name": "align_pen_orientation",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "mode": "normal_to_board",
+        "board_normal_axis": "+z",
+        "pen_axis_target": "-z",
+        "note": "orientation constraint only; no IK computed here"
+      }
+    },
+    {
+      "name": "pen_down",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "target": {
+          "x": 0.05,
+          "y": 0.0,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "approach_axis": "-z",
+        "speed_m_s": 0.01
+      }
+    },
+    {
+      "name": "draw_arc",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "center": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "radius_m": 0.05,
+        "start_angle_rad": 0.0,
+        "end_angle_rad": 6.283185307179586,
+        "direction": "ccw",
+        "speed_m_s": 0.03,
+        "sampling_hint": "kinematics module should sample circular Cartesian waypoints"
+      }
+    },
+    {
+      "name": "pen_up",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "lift_height_m": 0.03,
+        "speed_m_s": 0.02
+      }
+    }
+  ],
+  "diagnostics": {
+    "validation_ok": true,
+    "assumptions": [
+      "center was not specified; default board center was used",
+      "position_hint preserved: 중앙"
+    ],
+    "warnings": [
+      "robot reachability and IK feasibility are not checked by the LangChain planner"
+    ],
+    "errors": [],
+    "requires_robot_feasibility_check": true,
+    "note": "This planner does not compute IK, joint angles, Jacobians, or Isaac Sim commands."
+  }
+}

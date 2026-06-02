@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "source_command": "draw a 10 cm square at the board center",
+  "goal": {
+    "shape_type": "square",
+    "frame": "board"
+  },
+  "strokes": [],
+  "actions": [
+    {
+      "name": "move_to_start",
+      "frame": "board",
+      "params": {
+        "target": {"x": -0.05, "y": -0.05, "z": 0.03, "unit": "m"},
+        "hover_height_m": 0.03
+      }
+    },
+    {
+      "name": "align_pen_orientation",
+      "frame": "board",
+      "params": {
+        "mode": "normal_to_board",
+        "board_normal_axis": "+z",
+        "pen_axis_target": "-z"
+      }
+    },
+    {
+      "name": "pen_down",
+      "frame": "board",
+      "params": {
+        "target": {"x": -0.05, "y": -0.05, "z": 0.0, "unit": "m"},
+        "speed_m_s": 0.01
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "params": {
+        "start": {"x": -0.05, "y": -0.05, "z": 0.0, "unit": "m"},
+        "end": {"x": 0.05, "y": -0.05, "z": 0.0, "unit": "m"},
+        "speed_m_s": 0.03
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "params": {
+        "start": {"x": 0.05, "y": -0.05, "z": 0.0, "unit": "m"},
+        "end": {"x": 0.05, "y": 0.05, "z": 0.0, "unit": "m"},
+        "speed_m_s": 0.03
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "params": {
+        "start": {"x": 0.05, "y": 0.05, "z": 0.0, "unit": "m"},
+        "end": {"x": -0.05, "y": 0.05, "z": 0.0, "unit": "m"},
+        "speed_m_s": 0.03
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "params": {
+        "start": {"x": -0.05, "y": 0.05, "z": 0.0, "unit": "m"},
+        "end": {"x": -0.05, "y": -0.05, "z": 0.0, "unit": "m"},
+        "speed_m_s": 0.03
+      }
+    },
+    {
+      "name": "pen_up",
+      "frame": "board",
+      "params": {
+        "lift_height_m": 0.03,
+        "speed_m_s": 0.02
+      }
+    }
+  ],
+  "diagnostics": {
+    "validation_ok": true,
+    "note": "Sample square plan for line primitive checks."
+  }
+}

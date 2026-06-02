@@ -1,0 +1,23 @@
+{
+  "description": "Example LLM Unit Action tool-call plan for letter A. This is not a deterministic compiler template.",
+  "source_command": "Write the letter A.",
+  "tool_calls": [
+    {"tool": "begin_plan", "args": {"source_command": "Write the letter A."}},
+    {"tool": "move_to_start", "args": {"x": -0.05, "y": -0.05}},
+    {"tool": "align_pen_orientation", "args": {}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": 0.0, "y": 0.05}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "move_to_start", "args": {"x": 0.0, "y": 0.05}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": 0.05, "y": -0.05}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "move_to_start", "args": {"x": -0.025, "y": 0.0}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": 0.025, "y": 0.0}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "check_plan", "args": {}},
+    {"tool": "finish_plan", "args": {}}
+  ]
+}
+

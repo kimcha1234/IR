@@ -1,0 +1,28 @@
+[project]
+name = "franka-llm-drawing-control"
+version = "0.1.0"
+description = "Offline robot-control core for converting LLM drawing primitive plans into Franka-ready trajectories and controller commands."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+plot = [
+  "matplotlib",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["offline_tests"]
+pythonpath = ["."]
+
+[tool.hatch.build.targets.wheel]
+packages = ["franka_llm_drawing"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

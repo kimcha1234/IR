@@ -1,0 +1,29 @@
+isaac:
+  usd_path: "usd/franka_drawing_scene_clean.usda"
+  robot_prim_path: "/World/Franka"
+  board_prim_path: "/World/Paper"
+  board_frame_prim_path: "/World/BoardFrame"
+  pen_tip_prim_path: "/World/Franka/panda_link7/panda_link8/panda_hand/PenTool/PenTipFrame"
+  contact_sensor_prim_path: "/World/Franka/panda_link7"
+  contact_filter_prim_paths: ["/World/Paper"]
+  camera_prim_path: "/World/Camera"
+  physics_dt: 0.005
+  control_dt: 0.02
+  use_gpu: false
+
+backend:
+  command_mode: joint_position
+  ee_frame_name: panda_link7
+  # Important: command only the 7 arm joints. Finger joints remain in the USD
+  # articulation but are not JADE command targets.
+  joint_names:
+    - panda_joint1
+    - panda_joint2
+    - panda_joint3
+    - panda_joint4
+    - panda_joint5
+    - panda_joint6
+    - panda_joint7
+  # Calibrated reset posture for the 7 arm joints only. This places the pen tip
+  # above the first drawing waypoint before the control loop begins.
+  initial_joint_positions_rad: [0.000000, 0.143613, -0.000000, -2.188628, -0.000000, 2.333465, 0.750000]

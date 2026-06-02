@@ -1,0 +1,36 @@
+{
+  "plan_id": "jade_circle_hover_demo",
+  "schema_version": "jade-1.0",
+  "units": "m",
+  "board_frame": "board",
+  "actions": [
+    {
+      "id": "circle_start",
+      "type": "move_to_start",
+      "target": [0.05, 0.0, 0.02],
+      "speed": 0.08
+    },
+    {
+      "id": "circle_down",
+      "type": "pen_down",
+      "target_z": 0.0,
+      "speed": 0.02
+    },
+    {
+      "id": "circle_arc",
+      "type": "draw_arc",
+      "center": [0.0, 0.0, 0.0],
+      "radius": 0.05,
+      "theta_start_deg": 0.0,
+      "theta_end_deg": 360.0,
+      "clockwise": false,
+      "speed": 0.03
+    },
+    {
+      "id": "circle_up",
+      "type": "pen_up",
+      "lift_distance": 0.02,
+      "speed": 0.08
+    }
+  ]
+}

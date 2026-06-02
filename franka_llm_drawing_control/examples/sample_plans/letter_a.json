@@ -1,0 +1,80 @@
+{
+  "plan_id": "jade_letter_a_hover_demo",
+  "schema_version": "jade-1.0",
+  "units": "m",
+  "board_frame": "board",
+  "actions": [
+    {
+      "id": "a_left_start",
+      "type": "move_to_start",
+      "target": [-0.05, -0.05, 0.02],
+      "speed": 0.08
+    },
+    {
+      "id": "a_left_down",
+      "type": "pen_down",
+      "target_z": 0.0,
+      "speed": 0.02
+    },
+    {
+      "id": "a_left",
+      "type": "draw_line",
+      "end": [0.0, 0.06, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "a_left_up",
+      "type": "pen_up",
+      "lift_distance": 0.02,
+      "speed": 0.08
+    },
+    {
+      "id": "a_right_start",
+      "type": "move_to_start",
+      "target": [0.05, -0.05, 0.02],
+      "speed": 0.08
+    },
+    {
+      "id": "a_right_down",
+      "type": "pen_down",
+      "target_z": 0.0,
+      "speed": 0.02
+    },
+    {
+      "id": "a_right",
+      "type": "draw_line",
+      "end": [0.0, 0.06, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "a_right_up",
+      "type": "pen_up",
+      "lift_distance": 0.02,
+      "speed": 0.08
+    },
+    {
+      "id": "a_bar_start",
+      "type": "move_to_start",
+      "target": [-0.025, 0.005, 0.02],
+      "speed": 0.08
+    },
+    {
+      "id": "a_bar_down",
+      "type": "pen_down",
+      "target_z": 0.0,
+      "speed": 0.02
+    },
+    {
+      "id": "a_bar",
+      "type": "draw_line",
+      "end": [0.025, 0.005, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "a_bar_up",
+      "type": "pen_up",
+      "lift_distance": 0.02,
+      "speed": 0.08
+    }
+  ]
+}

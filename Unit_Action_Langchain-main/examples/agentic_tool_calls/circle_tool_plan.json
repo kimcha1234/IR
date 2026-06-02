@@ -1,0 +1,25 @@
+{
+  "description": "Example LLM Unit Action tool-call plan for a circle. This is not a deterministic compiler template.",
+  "source_command": "Draw a circle with radius 5 cm.",
+  "tool_calls": [
+    {"tool": "begin_plan", "args": {"source_command": "Draw a circle with radius 5 cm."}},
+    {"tool": "move_to_start", "args": {"x": 0.05, "y": 0.0}},
+    {"tool": "align_pen_orientation", "args": {}},
+    {"tool": "pen_down", "args": {}},
+    {
+      "tool": "draw_arc",
+      "args": {
+        "center_x": 0.0,
+        "center_y": 0.0,
+        "radius_m": 0.05,
+        "start_angle_rad": 0.0,
+        "end_angle_rad": 6.283185307179586,
+        "direction": "ccw"
+      }
+    },
+    {"tool": "pen_up", "args": {}},
+    {"tool": "check_plan", "args": {}},
+    {"tool": "finish_plan", "args": {}}
+  ]
+}
+

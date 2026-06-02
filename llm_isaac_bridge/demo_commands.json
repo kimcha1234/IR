@@ -1,0 +1,41 @@
+{
+  "description": "API-free presentation demo commands for the LLM-to-Isaac drawing pipeline.",
+  "cases": [
+    {
+      "id": "circle_r4cm",
+      "title": "Circle",
+      "command": "중앙에 반지름 4cm짜리 원을 그려줘",
+      "notes": "Single circular arc stroke."
+    },
+    {
+      "id": "square_s6cm",
+      "title": "Square",
+      "command": "중앙에 한 변 6cm짜리 사각형을 그려줘",
+      "notes": "One continuous square outline."
+    },
+    {
+      "id": "triangle_s6cm",
+      "title": "Triangle",
+      "command": "중앙에 한 변 6cm짜리 삼각형을 그려줘",
+      "notes": "One continuous triangle outline."
+    },
+    {
+      "id": "letter_a_8cm",
+      "title": "Letter A",
+      "command": "중앙에 알파벳 A를 8cm 크기로 그려줘",
+      "notes": "Three separate pen-down strokes: left leg, right leg, crossbar."
+    },
+    {
+      "id": "house_8cm",
+      "title": "House",
+      "command": "중앙에 8cm 집 모양을 그려줘",
+      "notes": "Simple one-stroke house outline."
+    },
+    {
+      "id": "star_8cm",
+      "title": "Star",
+      "command": "중앙에 8cm 별을 그려줘",
+      "notes": "Five-segment crossing star stroke."
+    }
+  ]
+}

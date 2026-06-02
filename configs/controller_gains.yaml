@@ -1,0 +1,25 @@
+# Offline controller defaults. Tune in simulation after the USD scene and
+# contact model are available.
+differential_ik:
+  damping: 0.05
+  position_gain: 1.0
+  orientation_gain: 0.5
+  max_delta_q: 0.05
+
+hybrid_position_force:
+  kp_pos_xy: 150.0
+  kd_pos_xy: 20.0
+  kp_z_when_not_in_contact: 100.0
+  kd_z_when_not_in_contact: 10.0
+  desired_normal_force_n: 1.0
+  kp_force: 5.0
+  ki_force: 0.0
+  kd_force: 0.0
+  max_force_cmd_n: 20.0
+  max_torque_nm: 30.0
+  orientation_kp: 20.0
+  orientation_kd: 3.0
+  nullspace_kp: 5.0
+  nullspace_kd: 1.0
+  use_gravity_compensation: true
+  normal_force_positive_when_pressing: true

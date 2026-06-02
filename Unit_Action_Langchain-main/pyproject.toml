@@ -1,0 +1,31 @@
+[project]
+name = "robot-drawing-planner"
+version = "0.1.0"
+description = "LangChain planner that converts natural language drawing commands into robot primitive action JSON."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "langchain",
+  "langchain-openai",
+  "matplotlib",
+  "pydantic>=2",
+  "streamlit",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
+[project.scripts]
+robot-drawing-plan = "robot_drawing_planner.cli:main"
+robot-drawing-plot = "robot_drawing_planner.plot_cli:main"
+
+[tool.pytest.ini_options]
+markers = [
+  "live: optional live OpenAI API smoke tests, skipped by default",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

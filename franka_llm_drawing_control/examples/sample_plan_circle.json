@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "source_command": "draw a 5 cm radius circle at the board center",
+  "goal": {
+    "shape_type": "circle",
+    "frame": "board"
+  },
+  "strokes": [
+    {
+      "type": "arc",
+      "stroke_id": "stroke_001",
+      "center": {"x": 0.0, "y": 0.0, "unit": "m"},
+      "radius_m": 0.05,
+      "start_angle_rad": 0.0,
+      "end_angle_rad": 6.283185307179586,
+      "direction": "ccw"
+    }
+  ],
+  "actions": [
+    {
+      "name": "move_to_start",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "target": {"x": 0.05, "y": 0.0, "z": 0.03, "unit": "m"},
+        "hover_height_m": 0.03
+      }
+    },
+    {
+      "name": "align_pen_orientation",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "mode": "normal_to_board",
+        "board_normal_axis": "+z",
+        "pen_axis_target": "-z"
+      }
+    },
+    {
+      "name": "pen_down",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "target": {"x": 0.05, "y": 0.0, "z": 0.0, "unit": "m"},
+        "approach_axis": "-z",
+        "speed_m_s": 0.01
+      }
+    },
+    {
+      "name": "draw_arc",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "center": {"x": 0.0, "y": 0.0, "z": 0.0, "unit": "m"},
+        "radius_m": 0.05,
+        "start_angle_rad": 0.0,
+        "end_angle_rad": 6.283185307179586,
+        "direction": "ccw",
+        "speed_m_s": 0.03
+      }
+    },
+    {
+      "name": "pen_up",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "lift_height_m": 0.03,
+        "speed_m_s": 0.02
+      }
+    }
+  ],
+  "diagnostics": {
+    "validation_ok": true,
+    "note": "Sample plan for offline robot-control core tests."
+  }
+}

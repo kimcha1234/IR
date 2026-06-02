@@ -1,0 +1,24 @@
+{
+  "description": "Example LLM Unit Action tool-call plan for a five-point star approximation using line segments. This is not hard-coded in deterministic geometry.",
+  "source_command": "Draw a star approximation.",
+  "tool_calls": [
+    {"tool": "begin_plan", "args": {"source_command": "Draw a star approximation."}},
+    {"tool": "move_to_start", "args": {"x": 0.0, "y": 0.07}},
+    {"tool": "align_pen_orientation", "args": {}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": 0.021, "y": 0.021}},
+    {"tool": "draw_line_to", "args": {"x": 0.067, "y": 0.021}},
+    {"tool": "draw_line_to", "args": {"x": 0.029, "y": -0.007}},
+    {"tool": "draw_line_to", "args": {"x": 0.042, "y": -0.056}},
+    {"tool": "draw_line_to", "args": {"x": 0.0, "y": -0.026}},
+    {"tool": "draw_line_to", "args": {"x": -0.042, "y": -0.056}},
+    {"tool": "draw_line_to", "args": {"x": -0.029, "y": -0.007}},
+    {"tool": "draw_line_to", "args": {"x": -0.067, "y": 0.021}},
+    {"tool": "draw_line_to", "args": {"x": -0.021, "y": 0.021}},
+    {"tool": "draw_line_to", "args": {"x": 0.0, "y": 0.07}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "check_plan", "args": {}},
+    {"tool": "finish_plan", "args": {}}
+  ]
+}
+

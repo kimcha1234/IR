@@ -1,0 +1,50 @@
+{
+  "plan_id": "jade_square_hover_demo",
+  "schema_version": "jade-1.0",
+  "units": "m",
+  "board_frame": "board",
+  "actions": [
+    {
+      "id": "square_start",
+      "type": "move_to_start",
+      "target": [-0.05, -0.05, 0.02],
+      "speed": 0.08
+    },
+    {
+      "id": "square_down",
+      "type": "pen_down",
+      "target_z": 0.0,
+      "speed": 0.02
+    },
+    {
+      "id": "square_edge_1",
+      "type": "draw_line",
+      "end": [0.05, -0.05, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "square_edge_2",
+      "type": "draw_line",
+      "end": [0.05, 0.05, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "square_edge_3",
+      "type": "draw_line",
+      "end": [-0.05, 0.05, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "square_edge_4",
+      "type": "draw_line",
+      "end": [-0.05, -0.05, 0.0],
+      "speed": 0.03
+    },
+    {
+      "id": "square_up",
+      "type": "pen_up",
+      "lift_distance": 0.02,
+      "speed": 0.08
+    }
+  ]
+}

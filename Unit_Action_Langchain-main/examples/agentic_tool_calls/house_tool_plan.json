@@ -1,0 +1,30 @@
+{
+  "description": "Example LLM Unit Action tool-call plan for a house: body square, roof triangle, and door. This is not hard-coded in deterministic geometry.",
+  "source_command": "Draw a simple house with a body, roof, and door.",
+  "tool_calls": [
+    {"tool": "begin_plan", "args": {"source_command": "Draw a simple house with a body, roof, and door."}},
+    {"tool": "move_to_start", "args": {"x": -0.06, "y": -0.05}},
+    {"tool": "align_pen_orientation", "args": {}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": 0.06, "y": -0.05}},
+    {"tool": "draw_line_to", "args": {"x": 0.06, "y": 0.04}},
+    {"tool": "draw_line_to", "args": {"x": -0.06, "y": 0.04}},
+    {"tool": "draw_line_to", "args": {"x": -0.06, "y": -0.05}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "move_to_start", "args": {"x": -0.075, "y": 0.04}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": 0.0, "y": 0.10}},
+    {"tool": "draw_line_to", "args": {"x": 0.075, "y": 0.04}},
+    {"tool": "draw_line_to", "args": {"x": -0.075, "y": 0.04}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "move_to_start", "args": {"x": -0.02, "y": -0.05}},
+    {"tool": "pen_down", "args": {}},
+    {"tool": "draw_line_to", "args": {"x": -0.02, "y": 0.0}},
+    {"tool": "draw_line_to", "args": {"x": 0.02, "y": 0.0}},
+    {"tool": "draw_line_to", "args": {"x": 0.02, "y": -0.05}},
+    {"tool": "pen_up", "args": {}},
+    {"tool": "check_plan", "args": {}},
+    {"tool": "finish_plan", "args": {}}
+  ]
+}
+

@@ -1,0 +1,17 @@
+{
+  "board_width_m": 0.3,
+  "board_height_m": 0.3,
+  "default_center": {
+    "x": 0.0,
+    "y": 0.0,
+    "unit": "m"
+  },
+  "default_shape_size_m": 0.08,
+  "default_circle_radius_m": 0.04,
+  "hover_height_m": 0.02,
+  "drawing_z_m": 0.0,
+  "default_speed_m_s": 0.025,
+  "pen_down_speed_m_s": 0.01,
+  "pen_up_speed_m_s": 0.02,
+  "arc_default_direction": "ccw"
+}
