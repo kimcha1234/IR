@@ -1,5 +1,5 @@
 [project]
-name = "franka-llm-drawing-control"
+name = "franka-llm-drawing"
 version = "0.1.0"
 description = "Offline robot-control core for converting LLM drawing primitive plans into Franka-ready trajectories and controller commands."
 readme = "README.md"

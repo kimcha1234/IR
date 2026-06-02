@@ -39,10 +39,6 @@ franka_llm_drawing/
     It converts DrawingPlan JSON into trajectories and handles frame transforms,
     pen-tip offsets, DLS IK, normal-force admittance, JADE evaluation, and Isaac execution.
 
-franka_llm_drawing_control/
-    Self-contained copy prepared for team GitHub sharing.
-    It can be uploaded as a separate folder without touching teammates' folders.
-
 configs/
     Frame, Isaac scene, JADE controller, and sampling configuration files.
 
@@ -300,7 +296,7 @@ For video recording, one-by-one execution is recommended over full batch executi
 
 ### 8.5 Collaboration / GitHub
 
-- Upload `franka_llm_drawing_control` as a separate team-shareable folder.
+- Share the IR project as an independent GitHub repository.
 - Add no-api demo and Isaac run instructions to README.
 - Prepare a dependency/setup guide for teammates.
 - Prepare a presentation demo checklist.
@@ -312,4 +308,3 @@ For video recording, one-by-one execution is recommended over full batch executi
 3. Real LLM integration is structurally ready, but the presentation demo uses no-api fallback for cost and reproducibility.
 4. The controller is not final; contact force and trajectory tracking will continue to improve.
 5. The next team discussion should decide which advanced features matter most: real LLM, more shapes, stronger force control, automatic recording, or automated reports.
-

@@ -38,10 +38,6 @@ franka_llm_drawing/
     DrawingPlan JSON을 trajectory로 바꾸고, frame transform, pen-tip offset,
     DLS IK, normal-force admittance, JADE 평가, Isaac backend 실행을 담당한다.
 
-franka_llm_drawing_control/
-    팀 GitHub 공유를 위해 만든 self-contained 복사본이다.
-    기존 팀원 폴더를 건드리지 않고 독립 폴더로 올릴 수 있도록 구성되어 있다.
-
 configs/
     frame, Isaac scene, JADE controller, sampling parameter 설정 파일이 들어 있다.
 
@@ -296,7 +292,7 @@ bash /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_commands.sh
 
 ### 8.5 협업 / GitHub 쪽
 
-- `franka_llm_drawing_control`을 팀 GitHub에 독립 폴더로 업로드
+- IR 프로젝트를 독립 GitHub repository로 공유
 - README에 no-api demo와 Isaac 실행 방법 추가
 - 팀원이 실행할 수 있는 dependency/setup guide 정리
 - 발표용 demo checklist 작성
@@ -308,4 +304,3 @@ bash /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_commands.sh
 3. 실제 LLM을 붙일 준비는 되어 있지만, API 비용과 환경 분리 문제가 있으므로 발표용은 no-api fallback이 더 안정적이다.
 4. 제어기는 아직 최종 완성 상태가 아니며, contact force와 trajectory tracking은 계속 개선할 예정이다.
 5. 다음 회의에서는 고급 기능을 어디까지 넣을지 정해야 한다. 특히 실제 LLM, 더 많은 도형, force control 고도화, 자동 녹화/리포트 중 우선순위를 정하면 된다.
-
