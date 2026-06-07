@@ -307,3 +307,48 @@ def test_normal_force_admittance_unwinds_lift_bias_when_contact_force_drops() ->
     assert high_force.normal_offset_m > 0.0
     assert low_force.normal_force_error_n > 0.0
     assert recovered.p_base_tip[2] < lifted.p_base_tip[2]
+
+
+def test_phase_gated_drawing_uses_drawing_offset_step_limit() -> None:
+    controller = NormalForceAdmittanceController(
+        NormalForceAdmittanceConfig(
+            phase_gating_enabled=True,
+            kp_offset_m_per_n=0.01,
+            max_offset_step_m=0.01,
+            max_drawing_offset_step_m=0.0004,
+            force_filter_alpha=1.0,
+        )
+    )
+
+    _, diagnostics = controller.update(
+        _target(contact=True, desired_force=1.0),
+        T_ee_tip=np.eye(4),
+        board_normal_base=np.array([0.0, 0.0, 1.0]),
+        measured_normal_force_n=5.0,
+        dt=0.02,
+    )
+
+    assert diagnostics.force_control_active is True
+    assert np.isclose(diagnostics.normal_offset_m, 0.0004)
+
+
+def test_phase_gated_unwanted_contact_can_be_disabled() -> None:
+    controller = NormalForceAdmittanceController(
+        NormalForceAdmittanceConfig(
+            phase_gating_enabled=True,
+            unwanted_contact_release_enabled=False,
+            force_filter_alpha=1.0,
+        )
+    )
+    target = _target(contact=False, desired_force=None)
+
+    adjusted, diagnostics = controller.update(
+        target,
+        T_ee_tip=np.eye(4),
+        board_normal_base=np.array([0.0, 0.0, 1.0]),
+        measured_normal_force_n=5.0,
+        dt=0.02,
+    )
+
+    assert diagnostics.force_control_active is False
+    assert np.allclose(adjusted.p_base_tip, target.p_base_tip)

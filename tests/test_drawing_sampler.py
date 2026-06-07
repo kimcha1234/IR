@@ -120,3 +120,24 @@ def test_pen_down_settle_samples_hold_contact_before_drawing() -> None:
     assert all(sample.desired_normal_force_n == 1.0 for sample in settle_samples)
     assert all(np.allclose(sample.position, draw_samples[0].position) for sample in settle_samples)
     assert settle_samples[-1].t <= draw_samples[0].t
+
+
+def test_corner_dwell_samples_are_inserted_between_drawing_primitives() -> None:
+    with (ROOT / "examples" / "sample_plan_line_square.json").open(encoding="utf-8") as f:
+        plan = json.load(f)
+
+    samples = sample_drawing_plan(
+        plan,
+        dt=0.02,
+        default_speed_m_s=0.03,
+        hover_height_m=0.03,
+        draw_height_m=0.0,
+        default_normal_force_n=0.7,
+        corner_dwell_duration_s=0.08,
+    )
+    dwell_samples = [sample for sample in samples if sample.source_action == "corner_dwell"]
+
+    assert len(dwell_samples) == 12
+    assert all(sample.pen_contact_desired for sample in dwell_samples)
+    assert all(sample.desired_normal_force_n == 0.7 for sample in dwell_samples)
+    assert {sample.stroke_id for sample in dwell_samples} == {None}

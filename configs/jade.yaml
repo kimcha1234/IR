@@ -21,6 +21,10 @@ jade:
     # high contact force before drawing made force tracking worse, so the
     # default run starts drawing immediately after guarded contact is reached.
     pen_down_settle_duration_s: 0.0
+    # Optional dwell at drawing primitive boundaries. It is disabled by default
+    # because contact tests showed that stopping at sharp corners can increase
+    # re-contact vibration for the current joint-position/contact setup.
+    corner_dwell_duration_s: 0.0
 
   thresholds:
     sigma_min_warning: 0.03
@@ -48,11 +52,36 @@ jade:
     # instead of staying near the calibrated start pose.
     max_qdot_rad_s: 5.0
     max_delta_q_rad: 0.12
+    # Default mode is one resolved-rate DLS command per Cartesian target:
+    # q_target = q_current + delta_q. The optional iterative_servo mode repeats
+    # the same JADE-DLS step several times for each drawing target, so the robot
+    # has time to converge before advancing to the next target. This keeps the
+    # FK -> Jacobian -> DLS -> joint-position pipeline, but trades speed for
+    # lower lag/offset.
+    tracking_mode: differential
+    iterative_servo_iterations: 1
+    iterative_servo_drawing_only: true
     # Experimental only. Full joint-command integration accumulated normal and
     # orientation contact errors and caused excessive paper force, so it is off
     # for the default contact drawing controller.
     command_integration_enabled: false
     max_command_tracking_error_rad: 0.35
+    # Optional safe approach before the planned trajectory. When enabled in an
+    # experiment config, the controller lifts from the current tip position,
+    # moves laterally at a safe height, then descends to the original hover
+    # target. This is meant to remove the initial move_to_start contact-force
+    # spike without changing the drawing controller itself.
+    startup_lift_height_m: 0.0
+    startup_lift_steps: 0
+    startup_lateral_steps: 0
+    startup_descent_steps: 0
+    # Optional trajectory preview for reducing steady path-following lag.
+    # Default 0.0 keeps the old controller exactly. For experiments, try
+    # 0.08-0.12 s while keeping same-stroke gating on so sharp corners are not
+    # skipped across primitive boundaries.
+    lookahead_time_s: 0.0
+    lookahead_drawing_only: true
+    lookahead_same_stroke_only: true
     # Safer integral correction: integrate only the paper-tangent XY tracking
     # error during drawing contact. Z force remains controlled by the
     # normal-force admittance below.
@@ -74,10 +103,9 @@ jade:
     # Adds the target-to-target Cartesian motion increment to the IK command.
     # This reduces steady tracking lag when following a moving drawing path.
     feedforward_gain: 1.0
-    # Keep this zero for normal runs. A nonzero command-side offset can be used
-    # only as a temporary calibration experiment because it may not generalize
-    # across drawing locations, scales, and shapes.
-    command_position_offset_m: [0.0, 0.0, 0.0]
+    # Workspace calibration for the current USD table/paper/tool setup. This
+    # compensates the repeatable base-X drawing bias measured in contact runs.
+    command_position_offset_m: [0.0034, 0.0, 0.0]
     # A pen only needs its axis aligned with the paper normal. Full orientation
     # also fixes roll about the pen axis and can force an unnecessarily folded
     # elbow posture.
@@ -102,6 +130,11 @@ jade:
     # XY and pen-axis orientation are tracked as position tasks, while the
     # board-normal target is adjusted from paper contact-force error.
     enabled: true
+    # Drawing/guarded pen_down, pen_up release, and unwanted-contact release use
+    # separate offset limits so contact-force behavior stays stable without
+    # changing the DLS position controller.
+    phase_gating_enabled: true
+    unwanted_contact_release_enabled: true
     desired_normal_force_n: 1.0
     contact_threshold_n: 0.05
     kp_offset_m_per_n: 0.0015
@@ -110,6 +143,14 @@ jade:
     max_press_offset_m: 0.004
     max_lift_offset_m: 0.025
     max_offset_step_m: 0.0015
+    # These limits are used only when phase_gating_enabled is true.
+    max_drawing_press_offset_m: 0.004
+    max_drawing_lift_offset_m: 0.018
+    max_drawing_offset_step_m: 0.0005
+    max_release_lift_offset_m: 0.025
+    max_release_offset_step_m: 0.0015
+    max_unwanted_contact_lift_m: 0.025
+    max_unwanted_contact_offset_step_m: 0.0015
     force_filter_alpha: 0.35
     # Vertical pen posture is a hard requirement, so contact mode keeps the
     # arm close to the HIGH_PD actuator gains. Force is regulated through the

@@ -22,10 +22,17 @@ from franka_llm_drawing.controllers import (
 )
 from franka_llm_drawing.evaluation import ExecutionLogger, ExecutionLogRow, write_jade_plots
 from franka_llm_drawing.evaluation.metrics import max_xy_error, xy_rmse, z_rmse
-from franka_llm_drawing.frames import ee_pose_to_tip_pose, make_transform, samples_to_cartesian_trajectory, tip_pose_to_ee_pose
+from franka_llm_drawing.frames import (
+    CartesianTrajectoryPoint,
+    ee_pose_to_tip_pose,
+    make_transform,
+    samples_to_cartesian_trajectory,
+    tip_pose_to_ee_pose,
+)
 from franka_llm_drawing.jade import AdaptiveDLSExecutor
 from franka_llm_drawing.llm_bridge import load_plan_json
 from franka_llm_drawing.sim import IsaacFrankaBackend
+from franka_llm_drawing.sim.debug_visualization import DebugDrawConfig, create_isaac_debug_draw_visualizer
 from franka_llm_drawing.trajectory import sample_drawing_plan
 from franka_llm_drawing.trajectory.path_primitives import PoseSample
 
@@ -52,6 +59,42 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--keep-open", action="store_true", help="Keep Isaac Sim open after the trajectory finishes.")
     parser.add_argument("--setup-only", action="store_true", help="Load USD and robot, then exit before control loop.")
     parser.add_argument("--skip-close", action="store_true", help="Exit without calling SimulationApp.close().")
+    parser.add_argument(
+        "--debug-draw",
+        action="store_true",
+        help="Draw planned path, actual path, contact force, and pen-tip frame in the Isaac viewport.",
+    )
+    parser.add_argument("--debug-draw-stride", type=int, default=5, help="Viewport visualization update stride.")
+    parser.add_argument("--debug-planned-stride", type=int, default=5, help="Subsampling stride for planned path lines.")
+    parser.add_argument(
+        "--debug-force-scale-m-per-n",
+        type=float,
+        default=0.04,
+        help="Viewport contact-force vector length scale.",
+    )
+    parser.add_argument(
+        "--debug-actual-force-width-per-n",
+        type=float,
+        default=5.0,
+        help="Additional red actual-path line width per Newton of measured contact force.",
+    )
+    parser.add_argument(
+        "--debug-actual-max-width",
+        type=float,
+        default=12.0,
+        help="Maximum red actual-path line width when force-width visualization is enabled.",
+    )
+    parser.add_argument(
+        "--debug-frame-axis-length",
+        type=float,
+        default=0.045,
+        help="Viewport pen-tip frame axis length in meters.",
+    )
+    parser.add_argument(
+        "--debug-force-vector",
+        action="store_true",
+        help="Also draw a yellow contact-force vector. By default force is encoded in actual-path line width.",
+    )
     return parser
 
 
@@ -126,6 +169,7 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
         max_linear_jerk_m_s3=jade.sampling.max_linear_jerk_m_s3,
         contact_force_ramp_duration_s=jade.sampling.contact_force_ramp_duration_s,
         pen_down_settle_duration_s=0.0 if args.mode == "hover" else jade.sampling.pen_down_settle_duration_s,
+        corner_dwell_duration_s=0.0 if args.mode == "hover" else jade.sampling.corner_dwell_duration_s,
     )
     if args.mode == "hover":
         samples = force_hover_samples(samples, frames.hover_height_m)
@@ -209,6 +253,23 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
     if args.setup_only:
         print("[INFO] setup-only check completed; exiting before control loop.", flush=True)
         return
+    visualizer = create_isaac_debug_draw_visualizer(
+        DebugDrawConfig(
+            enabled=bool(args.debug_draw),
+            update_stride=max(1, int(args.debug_draw_stride)),
+            planned_path_stride=max(1, int(args.debug_planned_stride)),
+            draw_contact_force=bool(args.debug_force_vector),
+            actual_force_width_per_n=max(0.0, float(args.debug_actual_force_width_per_n)),
+            actual_max_line_width=max(0.1, float(args.debug_actual_max_width)),
+            force_scale_m_per_n=max(0.0, float(args.debug_force_scale_m_per_n)),
+            frame_axis_length_m=max(0.0, float(args.debug_frame_axis_length)),
+        ),
+        log_fn=_log,
+    )
+    if visualizer is not None:
+        visualizer.set_planned_path(np.asarray([point.p_base_tip for point in cartesian], dtype=float))
+        force_mode = "yellow vector + actual-width" if args.debug_force_vector else "actual-width"
+        _log(f"viewport Debug Draw enabled: planned path=blue, drawing actual path=red, force={force_mode}, tip frame=RGB")
     executor = AdaptiveDLSExecutor(jade, fail_on_unsafe=False)
     tangent_integral = _TangentialPositionIntegralController(
         enabled=jade.executor.tangent_integral_enabled,
@@ -222,106 +283,177 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
         else None
     )
     logger = ExecutionLogger()
-    targets = [cartesian[0]] * max(args.settle_steps, 0) + cartesian + [cartesian[-1]] * max(args.hold_steps, 0)
+    startup_state = backend.get_state()
+    startup_actual_tip = ee_pose_to_tip_pose(
+        make_transform(startup_state.ee_rotation, startup_state.ee_position),
+        frames.T_ee_tip,
+    )
+    startup_targets = _startup_safe_approach_targets(
+        cartesian[0],
+        height_m=jade.executor.startup_lift_height_m,
+        lift_steps=jade.executor.startup_lift_steps,
+        lateral_steps=jade.executor.startup_lateral_steps,
+        descent_steps=jade.executor.startup_descent_steps,
+        board_normal_base=frames.board_normal_base,
+        T_ee_tip=frames.T_ee_tip,
+        current_T_base_tip=startup_actual_tip,
+    )
+    pre_trajectory_count = len(startup_targets) + max(args.settle_steps, 0)
+    targets = startup_targets + [cartesian[0]] * max(args.settle_steps, 0) + cartesian + [cartesian[-1]] * max(args.hold_steps, 0)
     substeps = max(1, int(round(scene_cfg.control_dt / scene_cfg.physics_dt)))
+    lookahead_steps = max(0, int(round(max(jade.executor.lookahead_time_s, 0.0) / scene_cfg.control_dt)))
     print("[INFO] JADE Isaac backend command joints:", ", ".join(scene_cfg.joint_names), flush=True)
     print(f"[INFO] USD: {scene_cfg.usd_path}", flush=True)
     if force_control_enabled:
         print(f"[INFO] normal force target: {desired_normal_force_n:.3f} N", flush=True)
+    if lookahead_steps > 0:
+        print(
+            "[INFO] drawing lookahead enabled: "
+            f"{jade.executor.lookahead_time_s:.3f}s ({lookahead_steps} control steps)",
+            flush=True,
+        )
+    if startup_targets:
+        print(
+            "[INFO] startup safe approach enabled: "
+            f"lift={jade.executor.startup_lift_height_m:.3f} m, "
+            f"lift_steps={jade.executor.startup_lift_steps}, "
+            f"lateral={jade.executor.startup_lateral_steps} steps, "
+            f"descent={jade.executor.startup_descent_steps} steps",
+            flush=True,
+        )
+    if str(jade.executor.tracking_mode).lower() == "iterative_servo":
+        print(
+            "[INFO] iterative DLS servo enabled: "
+            f"iterations={jade.executor.iterative_servo_iterations}, "
+            f"drawing_only={jade.executor.iterative_servo_drawing_only}",
+            flush=True,
+        )
     print(f"[INFO] trajectory samples: {len(cartesian)}, total control targets: {len(targets)}", flush=True)
 
+    logged_step = 0
+    pre_trajectory_log_count = 0
+    hold_log_count = 0
     for index, target in enumerate(targets):
         if not simulation_app.is_running():
             break
-        if index == 0 or index == args.settle_steps or index == len(targets) - 1:
+        if index == 0 or index == pre_trajectory_count or index == len(targets) - 1:
             print(f"[INFO] control target {index + 1}/{len(targets)}", flush=True)
-        command_target = _apply_command_position_offset(
-            target,
-            jade.executor.command_position_offset_m,
-            frames.T_ee_tip,
+        waypoint_index = _trajectory_waypoint_index(
+            index,
+            pre_trajectory_count=pre_trajectory_count,
+            trajectory_count=len(cartesian),
         )
-        pre_state = backend.get_state()
-        pre_actual_tip = ee_pose_to_tip_pose(
-            make_transform(pre_state.ee_rotation, pre_state.ee_position),
-            frames.T_ee_tip,
-        )
-        command_target = tangent_integral.update(
-            command_target,
-            actual_tip_position=pre_actual_tip[:3, 3],
-            board_normal_base=frames.board_normal_base,
-            T_ee_tip=frames.T_ee_tip,
-            dt=scene_cfg.control_dt,
-        )
-        force_diag: NormalForceAdmittanceDiagnostics | None = None
-        if force_controller is not None:
-            command_target, force_diag = force_controller.update(
+        servo_iterations = _servo_iterations_for_target(target, jade.executor)
+        for _ in range(servo_iterations):
+            if not simulation_app.is_running():
+                break
+            command_base_target = _select_lookahead_target(
+                targets,
+                index,
+                lookahead_steps=lookahead_steps,
+                drawing_only=jade.executor.lookahead_drawing_only,
+                same_stroke_only=jade.executor.lookahead_same_stroke_only,
+            )
+            command_target = _apply_command_position_offset(
+                command_base_target,
+                jade.executor.command_position_offset_m,
+                frames.T_ee_tip,
+            )
+            pre_state = backend.get_state()
+            pre_actual_tip = ee_pose_to_tip_pose(
+                make_transform(pre_state.ee_rotation, pre_state.ee_position),
+                frames.T_ee_tip,
+            )
+            command_target = tangent_integral.update(
                 command_target,
-                T_ee_tip=frames.T_ee_tip,
+                actual_tip_position=pre_actual_tip[:3, 3],
                 board_normal_base=frames.board_normal_base,
-                measured_normal_force_n=backend.get_measured_normal_force(),
+                T_ee_tip=frames.T_ee_tip,
                 dt=scene_cfg.control_dt,
             )
-        result = executor.step(
-            backend,
-            command_target,
-            waypoint_index=min(index, len(cartesian) - 1),
-            dt=scene_cfg.control_dt,
-        )
-        for _ in range(substeps):
-            backend.step()
-        state = backend.get_state()
-        logged_normal_force = backend.get_measured_normal_force()
-        actual_tip = ee_pose_to_tip_pose(make_transform(state.ee_rotation, state.ee_position), frames.T_ee_tip)
-        tip_orientation_error_deg = _axis_alignment_error_deg(
-            target.R_base_tip[:, 2],
-            actual_tip[:3, :3][:, 2],
-        )
-        status, policy_reason = _status_with_orientation_requirement(
-            result.policy.status,
-            result.policy.reason,
-            tip_orientation_error_deg,
-            jade.thresholds.tip_orientation_warning_deg,
-            jade.thresholds.tip_orientation_fail_deg,
-        )
-        logged_force_error = None
-        logged_contact_active = None
-        logged_force = None
-        if force_diag is not None:
-            logged_force = force_diag.measured_normal_force_n if logged_normal_force is None else logged_normal_force
-            logged_force_error = (
-                force_diag.desired_normal_force_n - logged_force
-                if force_diag.force_control_active
-                else 0.0
+            force_diag: NormalForceAdmittanceDiagnostics | None = None
+            if force_controller is not None:
+                command_target, force_diag = force_controller.update(
+                    command_target,
+                    T_ee_tip=frames.T_ee_tip,
+                    board_normal_base=frames.board_normal_base,
+                    measured_normal_force_n=backend.get_measured_normal_force(),
+                    dt=scene_cfg.control_dt,
+                )
+            result = executor.step(
+                backend,
+                command_target,
+                waypoint_index=waypoint_index,
+                dt=scene_cfg.control_dt,
             )
-            logged_contact_active = logged_force >= jade.force_control.contact_threshold_n
-        logger.append(
-            ExecutionLogRow(
-                t=index * scene_cfg.control_dt,
-                stroke_id=target.stroke_id or "unknown",
-                action_type=target.source_action_name or "unknown",
-                desired_position=target.p_base_tip,
-                actual_position=actual_tip[:3, 3],
-                commanded_position=command_target.p_base_tip,
-                q=state.q,
-                qdot=state.qd,
-                sigma_min=result.metrics.sigma_min,
-                condition_number=result.metrics.condition_number,
-                manipulability=result.metrics.manipulability,
-                lambda_dls=result.policy.lambda_dls,
-                speed_scale=result.policy.speed_scale,
-                status=status,
-                joint_limit_margin=result.metrics.joint_limit_margin,
-                tip_orientation_error_deg=tip_orientation_error_deg,
-                desired_normal_force_n=force_diag.desired_normal_force_n if force_diag is not None else None,
-                measured_normal_force_n=logged_force,
-                filtered_normal_force_n=force_diag.filtered_normal_force_n if force_diag is not None else None,
-                normal_force_error_n=logged_force_error,
-                normal_force_offset_m=force_diag.normal_offset_m if force_diag is not None else None,
-                force_control_active=force_diag.force_control_active if force_diag is not None else None,
-                contact_active=logged_contact_active,
-                policy_reason=policy_reason,
+            for _ in range(substeps):
+                backend.step()
+            state = backend.get_state()
+            logged_normal_force = backend.get_measured_normal_force()
+            actual_tip = ee_pose_to_tip_pose(make_transform(state.ee_rotation, state.ee_position), frames.T_ee_tip)
+            tip_orientation_error_deg = _axis_alignment_error_deg(
+                target.R_base_tip[:, 2],
+                actual_tip[:3, :3][:, 2],
             )
-        )
+            status, policy_reason = _status_with_orientation_requirement(
+                result.policy.status,
+                result.policy.reason,
+                tip_orientation_error_deg,
+                jade.thresholds.tip_orientation_warning_deg,
+                jade.thresholds.tip_orientation_fail_deg,
+            )
+            logged_force_error = None
+            logged_contact_active = None
+            logged_force = None
+            if force_diag is not None:
+                logged_force = force_diag.measured_normal_force_n if logged_normal_force is None else logged_normal_force
+                logged_force_error = (
+                    force_diag.desired_normal_force_n - logged_force
+                    if force_diag.force_control_active
+                    else 0.0
+                )
+                logged_contact_active = logged_force >= jade.force_control.contact_threshold_n
+            if visualizer is not None:
+                visualizer.update(
+                    step_index=logged_step,
+                    actual_tip_transform=actual_tip,
+                    measured_normal_force_n=logged_force if logged_force is not None else logged_normal_force,
+                    board_normal_base=frames.board_normal_base,
+                    record_actual_path=_is_drawing_action(target.source_action_name) and bool(target.pen_contact_desired),
+                )
+            logger.append(
+                ExecutionLogRow(
+                    t=logged_step * scene_cfg.control_dt,
+                    stroke_id=target.stroke_id or "unknown",
+                    action_type=target.source_action_name or "unknown",
+                    desired_position=target.p_base_tip,
+                    actual_position=actual_tip[:3, 3],
+                    commanded_position=command_target.p_base_tip,
+                    q=state.q,
+                    qdot=state.qd,
+                    sigma_min=result.metrics.sigma_min,
+                    condition_number=result.metrics.condition_number,
+                    manipulability=result.metrics.manipulability,
+                    lambda_dls=result.policy.lambda_dls,
+                    speed_scale=result.policy.speed_scale,
+                    status=status,
+                    joint_limit_margin=result.metrics.joint_limit_margin,
+                    tip_orientation_error_deg=tip_orientation_error_deg,
+                    desired_normal_force_n=force_diag.desired_normal_force_n if force_diag is not None else None,
+                    measured_normal_force_n=logged_force,
+                    filtered_normal_force_n=force_diag.filtered_normal_force_n if force_diag is not None else None,
+                    normal_force_error_n=logged_force_error,
+                    normal_force_offset_m=force_diag.normal_offset_m if force_diag is not None else None,
+                    force_control_active=force_diag.force_control_active if force_diag is not None else None,
+                    contact_active=logged_contact_active,
+                    policy_reason=policy_reason,
+                )
+            )
+            if index < pre_trajectory_count:
+                pre_trajectory_log_count += 1
+            elif index >= pre_trajectory_count + len(cartesian):
+                hold_log_count += 1
+            logged_step += 1
 
     logger.write_csv(out_dir / "execution_log.csv")
     write_jade_plots(logger, out_dir)
@@ -331,18 +463,36 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
         "mode": args.mode,
         "samples_logged": len(logger.rows),
         "command_joint_names": list(scene_cfg.joint_names),
+        "tracking_mode": str(jade.executor.tracking_mode),
+        "iterative_servo_iterations": int(jade.executor.iterative_servo_iterations),
+        "iterative_servo_drawing_only": bool(jade.executor.iterative_servo_drawing_only),
+        "startup_safe_approach_steps": len(startup_targets),
+        "settle_steps": max(args.settle_steps, 0),
+        "hold_steps": max(args.hold_steps, 0),
         "xy_rmse_m": xy_rmse(desired, actual),
         "max_xy_error_m": max_xy_error(desired, actual),
         "z_rmse_m": z_rmse(desired, actual),
     }
-    settle_count = min(max(args.settle_steps, 0), len(logger.rows))
-    hold_count = min(max(args.hold_steps, 0), max(0, len(logger.rows) - settle_count))
+    settle_count = min(pre_trajectory_log_count, len(logger.rows))
+    hold_count = min(hold_log_count, max(0, len(logger.rows) - settle_count))
     draw_start = settle_count
     draw_stop = max(draw_start, len(logger.rows) - hold_count)
     if settle_count:
         summary["settle_mean_error_m"] = _mean_position_error(desired[:settle_count], actual[:settle_count])
     if draw_stop > draw_start:
-        summary["draw_mean_error_m"] = _mean_position_error(desired[draw_start:draw_stop], actual[draw_start:draw_stop])
+        summary["active_trajectory_mean_error_m"] = _mean_position_error(
+            desired[draw_start:draw_stop],
+            actual[draw_start:draw_stop],
+        )
+    drawing_rows = _drawing_rows(logger)
+    if drawing_rows:
+        draw_desired = _row_positions(drawing_rows, "desired_position")
+        draw_actual = _row_positions(drawing_rows, "actual_position")
+        summary["draw_sample_count"] = len(drawing_rows)
+        summary["draw_xy_rmse_m"] = xy_rmse(draw_desired, draw_actual)
+        summary["draw_max_xy_error_m"] = max_xy_error(draw_desired, draw_actual)
+        summary["draw_z_rmse_m"] = z_rmse(draw_desired, draw_actual)
+        summary["draw_mean_error_m"] = _mean_position_error(draw_desired, draw_actual)
     orientation_errors = np.asarray(
         [row.tip_orientation_error_deg for row in logger.rows if row.tip_orientation_error_deg is not None],
         dtype=float,
@@ -350,6 +500,13 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
     if orientation_errors.size:
         summary["tip_orientation_rmse_deg"] = float(np.sqrt(np.mean(np.square(orientation_errors))))
         summary["tip_orientation_max_error_deg"] = float(np.max(orientation_errors))
+    draw_orientation_errors = np.asarray(
+        [row.tip_orientation_error_deg for row in drawing_rows if row.tip_orientation_error_deg is not None],
+        dtype=float,
+    )
+    if draw_orientation_errors.size:
+        summary["draw_tip_orientation_rmse_deg"] = float(np.sqrt(np.mean(np.square(draw_orientation_errors))))
+        summary["draw_tip_orientation_max_error_deg"] = float(np.max(draw_orientation_errors))
     joint_margins = np.asarray(
         [row.joint_limit_margin for row in logger.rows if row.joint_limit_margin is not None],
         dtype=float,
@@ -359,9 +516,15 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
     force_summary = _force_tracking_summary(logger)
     if force_summary:
         summary["normal_force"] = force_summary
+    draw_force_summary = _force_tracking_summary(logger, rows=drawing_rows)
+    if draw_force_summary:
+        summary["draw_normal_force"] = draw_force_summary
     (out_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(f"[INFO] xy_rmse_m: {summary['xy_rmse_m']:.6f}", flush=True)
     print(f"[INFO] max_xy_error_m: {summary['max_xy_error_m']:.6f}", flush=True)
+    if "draw_xy_rmse_m" in summary:
+        print(f"[INFO] draw_xy_rmse_m: {summary['draw_xy_rmse_m']:.6f}", flush=True)
+        print(f"[INFO] draw_max_xy_error_m: {summary['draw_max_xy_error_m']:.6f}", flush=True)
     print(f"[INFO] outputs: {out_dir}", flush=True)
 
     while args.keep_open and simulation_app.is_running():
@@ -396,9 +559,157 @@ def scale_plan_speeds(plan, speed_scale: float):
     return replace(plan, actions=scaled_actions)
 
 
+def _startup_safe_approach_targets(
+    first_target: CartesianTrajectoryPoint,
+    *,
+    height_m: float,
+    lift_steps: int,
+    lateral_steps: int,
+    descent_steps: int,
+    board_normal_base: np.ndarray,
+    T_ee_tip: np.ndarray,
+    current_T_base_tip: np.ndarray | None = None,
+) -> list[CartesianTrajectoryPoint]:
+    """Build optional pre-trajectory targets above the first planned target.
+
+    This first lifts from the current tip position, then moves laterally at a
+    safe height, and finally descends to the original first target.
+    """
+
+    height = max(float(height_m), 0.0)
+    lift_count = max(int(lift_steps), 0)
+    lateral_count = max(int(lateral_steps), 0)
+    descent_count = max(int(descent_steps), 0)
+    if height <= 0.0 or (lift_count == 0 and lateral_count == 0 and descent_count == 0):
+        return []
+
+    normal = _normalized(board_normal_base)
+    current_tip = first_target.T_base_tip if current_T_base_tip is None else np.asarray(current_T_base_tip, dtype=float)
+    current_position = current_tip[:3, 3].copy()
+    current_rotation = current_tip[:3, :3].copy()
+    first_position = np.asarray(first_target.p_base_tip, dtype=float)
+    current_high_position = current_position + height * normal
+    first_high_position = first_position + height * normal
+
+    targets: list[CartesianTrajectoryPoint] = []
+    targets.extend(
+        _interpolate_startup_segment(
+            first_target,
+            start_position=current_position,
+            stop_position=current_high_position,
+            rotation=current_rotation,
+            steps=lift_count,
+            T_ee_tip=T_ee_tip,
+            source_action_name="startup_lift",
+        )
+    )
+    targets.extend(
+        _interpolate_startup_segment(
+            first_target,
+            start_position=current_high_position,
+            stop_position=first_high_position,
+            rotation=first_target.R_base_tip,
+            steps=lateral_count,
+            T_ee_tip=T_ee_tip,
+            source_action_name="startup_lateral",
+        )
+    )
+    targets.extend(
+        _interpolate_startup_segment(
+            first_target,
+            start_position=first_high_position,
+            stop_position=first_position,
+            rotation=first_target.R_base_tip,
+            steps=descent_count,
+            T_ee_tip=T_ee_tip,
+            source_action_name="startup_descent",
+        )
+    )
+    return targets
+
+
+def _interpolate_startup_segment(
+    source: CartesianTrajectoryPoint,
+    *,
+    start_position: np.ndarray,
+    stop_position: np.ndarray,
+    rotation: np.ndarray,
+    steps: int,
+    T_ee_tip: np.ndarray,
+    source_action_name: str,
+) -> list[CartesianTrajectoryPoint]:
+    count = max(int(steps), 0)
+    if count == 0:
+        return []
+    start = np.asarray(start_position, dtype=float)
+    stop = np.asarray(stop_position, dtype=float)
+    output: list[CartesianTrajectoryPoint] = []
+    for step in range(1, count + 1):
+        alpha = step / float(count)
+        position = (1.0 - alpha) * start + alpha * stop
+        output.append(
+            _copy_tip_target_with_pose(
+                source,
+                position,
+                rotation,
+                T_ee_tip,
+                source_action_name=source_action_name,
+            )
+        )
+    return output
+
+
+def _copy_tip_target_with_pose(
+    source: CartesianTrajectoryPoint,
+    position: np.ndarray,
+    rotation: np.ndarray,
+    T_ee_tip: np.ndarray,
+    *,
+    source_action_name: str,
+) -> CartesianTrajectoryPoint:
+    adjusted_position = np.asarray(position, dtype=float)
+    adjusted_rotation = np.asarray(rotation, dtype=float)
+    adjusted_T_base_tip = make_transform(adjusted_rotation, adjusted_position)
+    return replace(
+        source,
+        p_base_tip=adjusted_position,
+        R_base_tip=adjusted_rotation,
+        T_base_tip=adjusted_T_base_tip,
+        T_base_ee=tip_pose_to_ee_pose(adjusted_T_base_tip, T_ee_tip),
+        pen_state="up",
+        source_action_name=source_action_name,
+        stroke_id="startup",
+        pen_contact_desired=False,
+        desired_normal_force_n=None,
+    )
+
+
+def _trajectory_waypoint_index(index: int, *, pre_trajectory_count: int, trajectory_count: int) -> int:
+    if trajectory_count <= 0:
+        return 0
+    if index < pre_trajectory_count:
+        return 0
+    return min(index - pre_trajectory_count, trajectory_count - 1)
+
+
+def _servo_iterations_for_target(target: CartesianTrajectoryPoint, executor_config) -> int:
+    mode = str(getattr(executor_config, "tracking_mode", "differential")).lower()
+    if mode in {"differential", "resolved_rate"}:
+        return 1
+    if mode not in {"iterative_servo", "iterative_dls"}:
+        raise ValueError("executor.tracking_mode must be 'differential' or 'iterative_servo'.")
+    iterations = max(1, int(getattr(executor_config, "iterative_servo_iterations", 1)))
+    drawing_only = bool(getattr(executor_config, "iterative_servo_drawing_only", True))
+    if drawing_only and not (_is_drawing_action(target.source_action_name) and target.pen_contact_desired):
+        return 1
+    return iterations
+
+
 def _normal_force_config(config, desired_normal_force_n: float) -> NormalForceAdmittanceConfig:
     return NormalForceAdmittanceConfig(
         enabled=bool(config.enabled),
+        phase_gating_enabled=bool(config.phase_gating_enabled),
+        unwanted_contact_release_enabled=bool(config.unwanted_contact_release_enabled),
         desired_normal_force_n=float(desired_normal_force_n),
         contact_threshold_n=float(config.contact_threshold_n),
         kp_offset_m_per_n=float(config.kp_offset_m_per_n),
@@ -407,8 +718,40 @@ def _normal_force_config(config, desired_normal_force_n: float) -> NormalForceAd
         max_press_offset_m=float(config.max_press_offset_m),
         max_lift_offset_m=float(config.max_lift_offset_m),
         max_offset_step_m=float(config.max_offset_step_m),
+        max_drawing_press_offset_m=float(config.max_drawing_press_offset_m),
+        max_drawing_lift_offset_m=float(config.max_drawing_lift_offset_m),
+        max_drawing_offset_step_m=float(config.max_drawing_offset_step_m),
+        max_release_lift_offset_m=float(config.max_release_lift_offset_m),
+        max_release_offset_step_m=float(config.max_release_offset_step_m),
+        max_unwanted_contact_lift_m=float(config.max_unwanted_contact_lift_m),
+        max_unwanted_contact_offset_step_m=float(config.max_unwanted_contact_offset_step_m),
         force_filter_alpha=float(config.force_filter_alpha),
     )
+
+
+def _select_lookahead_target(
+    targets: list,
+    index: int,
+    *,
+    lookahead_steps: int,
+    drawing_only: bool,
+    same_stroke_only: bool,
+):
+    current = targets[index]
+    if lookahead_steps <= 0:
+        return current
+    if drawing_only and not _is_drawing_action(current.source_action_name):
+        return current
+    stop = min(len(targets) - 1, index + int(lookahead_steps))
+    selected = current
+    for candidate_index in range(index + 1, stop + 1):
+        candidate = targets[candidate_index]
+        if drawing_only and not _is_drawing_action(candidate.source_action_name):
+            break
+        if same_stroke_only and candidate.stroke_id != current.stroke_id:
+            break
+        selected = candidate
+    return selected
 
 
 def _apply_command_position_offset(target, offset_m: tuple[float, float, float], T_ee_tip: np.ndarray):
@@ -623,6 +966,10 @@ def _log(message: str) -> None:
     print(f"[INFO][JADE] {message}", flush=True)
 
 
+def _is_drawing_action(action_name: str | None) -> bool:
+    return str(action_name or "") in {"draw_line", "draw_line_to", "draw_arc"}
+
+
 def _axis_alignment_error_deg(desired_axis: np.ndarray, actual_axis: np.ndarray) -> float:
     desired = np.asarray(desired_axis, dtype=float)
     actual = np.asarray(actual_axis, dtype=float)
@@ -648,26 +995,39 @@ def _mean_position_error(desired: np.ndarray, actual: np.ndarray) -> dict[str, f
     }
 
 
-def _force_tracking_summary(logger: ExecutionLogger) -> dict[str, float | int]:
-    rows = [
+def _drawing_rows(logger: ExecutionLogger) -> list[ExecutionLogRow]:
+    return [row for row in logger.rows if _is_drawing_action(row.action_type)]
+
+
+def _row_positions(rows: list[ExecutionLogRow], attribute_name: str) -> np.ndarray:
+    return np.asarray([getattr(row, attribute_name) for row in rows], dtype=float)
+
+
+def _force_tracking_summary(
+    logger: ExecutionLogger,
+    *,
+    rows: list[ExecutionLogRow] | None = None,
+) -> dict[str, float | int]:
+    source_rows = logger.rows if rows is None else rows
+    force_rows = [
         row
-        for row in logger.rows
+        for row in source_rows
         if row.force_control_active
         and row.desired_normal_force_n is not None
         and row.measured_normal_force_n is not None
     ]
-    if not rows:
+    if not force_rows:
         return {}
-    desired = np.asarray([row.desired_normal_force_n for row in rows], dtype=float)
-    measured = np.asarray([row.measured_normal_force_n for row in rows], dtype=float)
+    desired = np.asarray([row.desired_normal_force_n for row in force_rows], dtype=float)
+    measured = np.asarray([row.measured_normal_force_n for row in force_rows], dtype=float)
     error = desired - measured
     offsets = np.asarray(
-        [0.0 if row.normal_force_offset_m is None else row.normal_force_offset_m for row in rows],
+        [0.0 if row.normal_force_offset_m is None else row.normal_force_offset_m for row in force_rows],
         dtype=float,
     )
-    contacts = np.asarray([bool(row.contact_active) for row in rows], dtype=bool)
+    contacts = np.asarray([bool(row.contact_active) for row in force_rows], dtype=bool)
     return {
-        "active_samples": int(len(rows)),
+        "active_samples": int(len(force_rows)),
         "contact_ratio": float(np.mean(contacts)),
         "desired_mean_n": float(np.mean(desired)),
         "measured_mean_n": float(np.mean(measured)),

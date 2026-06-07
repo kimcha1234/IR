@@ -159,6 +159,173 @@ x_cmd = x_des + clip(Ki * i_tangent)
 Cartesian offset보다 일반화 가능성이 높고, full joint-command integration보다
 접촉 안정성이 높다.
 
+## Iterative DLS servo 실험 모드
+
+현재 기본 실행은 한 Cartesian target마다 한 번의 resolved-rate DLS command를 보낸다.
+
+```text
+q_target = q_current + delta_q
+```
+
+이 방식은 단순하고 안정적이지만, moving trajectory에서는 실제 joint-position
+actuator가 `q_target`을 즉시 따라가지 못하므로 planned path보다 뒤처지는 offset이
+남을 수 있다. 특히 종이면 접촉과 펜 자세 유지가 동시에 걸리면, 위치 추종 lag가 더
+잘 보인다.
+
+이를 확인하기 위해 기본 controller를 지우지 않고 별도 실험 모드를 추가했다.
+
+```yaml
+tracking_mode: iterative_servo
+iterative_servo_iterations: 3
+iterative_servo_drawing_only: true
+```
+
+이 모드는 JADE를 제거하지 않는다. 같은 FK, Jacobian, DLS, condition number,
+joint-limit check를 그대로 쓰되, drawing target마다 DLS step과 Isaac physics step을
+여러 번 반복해서 해당 target에 더 수렴한 뒤 다음 target으로 넘어간다.
+
+```text
+for each drawing target:
+  repeat N times:
+    FK로 현재 tip pose 확인
+    Jacobian 계산
+    DLS로 delta_q 계산
+    q_target = q_current + delta_q
+    Isaac joint-position backend 실행
+```
+
+따라서 이 모드는 수업 내용과의 연결이 더 약해지는 것이 아니라, 오히려
+`FK -> Jacobian -> Damped Least Squares IK -> joint position control` 흐름을 더
+명확하게 보여준다. 단점은 drawing 시간이 길어진다는 것이다. 즉 속도보다 궤적 추종
+정확도를 우선하는 실험 모드로 봐야 한다.
+
+이 모드는 튜닝 과정에서 비교했지만, 최종 기본 실행에서는 사용하지 않는다. 기본
+`configs/jade.yaml`의 `tracking_mode`는 `differential`이므로 최종 실행은 기존 방식
+그대로 유지된다.
+
+## 260607 tangent integral tuning
+
+13번 iterative servo 실험은 draw XY RMSE를 조금 줄였지만, x 방향 평균 offset을
+근본적으로 없애지는 못했다.
+
+핵심 로그는 다음과 같았다.
+
+```text
+13번 iterative servo:
+  desired - actual x 평균      약 3.20 mm
+  commanded - desired x 평균   약 3.02 mm
+  commanded - actual x 평균    약 6.22 mm
+```
+
+즉 controller가 이미 planned path보다 x 방향으로 3 mm 정도 앞선 command를 보내고
+있는데도, 실제 tip은 그 command보다 약 6 mm 뒤에 있었다. 이 결과는 단순한
+resolved-rate IK 반복 횟수 문제가 아니라, 종이면 접촉, 마찰, joint-position actuator
+tracking 때문에 생기는 steady tracking offset 문제에 가깝다는 뜻이다.
+
+14번 실험에서는 paper-tangent integral correction을 더 강하게 했다.
+
+```yaml
+tangent_integral_gain: 0.45
+tangent_integral_leak_per_s: 0.05
+max_tangent_integral_offset_m: 0.015
+```
+
+이 보정은 z 방향 접촉력 제어를 건드리지 않고, 종이면 접선 방향의 위치 오차만
+적분해서 Cartesian command를 조금 앞쪽으로 보낸다.
+
+```text
+08번 기존 추천:
+  draw_xy_rmse      3.448 mm
+  mean_x_offset     3.379 mm
+  force_mean        3.119 N
+  force_max        11.468 N
+
+14번 tangent_i_strong:
+  draw_xy_rmse      1.402 mm
+  mean_x_offset     1.016 mm
+  force_mean        3.134 N
+  force_max        10.970 N
+```
+
+따라서 14번은 평균 offset을 크게 줄인 좋은 후보이다. 다만 offset-compensated RMSE는
+08번보다 약간 커졌으므로, command를 너무 강하게 앞세워서 선 내부의 작은 흔들림이
+늘어났을 가능성이 있다.
+
+다음 튜닝에서는 14번의 장점은 유지하되 흔들림을 줄이는 것이 목표였다. 비교 후보는
+다음과 같은 gain 조합이었다.
+
+```text
+15번 tangent_i_mid:
+    gain 0.35, leak 0.08, max 12 mm
+
+16번 tangent_i_040:
+    gain 0.40, leak 0.06, max 13 mm
+
+17번 tangent_i_strong_limited:
+    gain 0.45, leak 0.05, max 12 mm
+```
+
+선택 기준은 단순하다.
+
+- `mean_x_offset_mm`는 14번처럼 1 mm 근처로 낮을수록 좋다.
+- `offset_comp_xy_mm`는 08번처럼 0.7 mm 근처로 낮을수록 선 내부 흔들림이 적다.
+- `force_mean_n`, `force_p95_n`, `force_max_n`가 14번보다 크게 악화되면 제외한다.
+
+## Final default contact drawing setting
+
+최종 기본 설정은 20번 실험 결과를 따른다.
+
+```text
+20_star_phase_lift_014_xff_0034
+```
+
+20번은 강한 tangent integral이나 iterative servo를 쓰지 않고, 08번 안정 baseline에
+작은 workspace calibration offset만 더한 설정이다.
+
+```yaml
+tracking_mode: differential
+tangent_integral_gain: 0.20
+tangent_integral_leak_per_s: 0.20
+max_tangent_integral_offset_m: 0.008
+phase_gating_enabled: true
+max_drawing_lift_offset_m: 0.018
+command_position_offset_m: [0.0034, 0.0, 0.0]
+```
+
+결과는 다음과 같다.
+
+```text
+08번 기존 안정 baseline:
+  draw_xy_rmse      3.448 mm
+  mean_x_offset     3.379 mm
+  offset_comp_xy    0.684 mm
+  draw force max   11.468 N
+
+20번 최종 기본 후보:
+  draw_xy_rmse      0.683 mm
+  mean_x_offset    -0.009 mm
+  offset_comp_xy    0.682 mm
+  draw force max   11.285 N
+```
+
+즉 평균 x offset은 거의 0으로 줄었고, 선 내부 흔들림 지표와 접촉력은 기존 안정
+baseline 수준을 유지했다. 최종 정리 단계에서는 drawing 중 normal-force loop가 lift
+offset 상한 근처에서 동작하는 것을 확인했기 때문에, XY/DLS 제어는 그대로 두고
+`max_drawing_lift_offset_m`만 14 mm에서 18 mm로 완화했다. 이 변경은 종이면 법선
+방향 command offset 한계만 바꾸는 것이므로 그림의 XY 추종 구조에는 직접 개입하지
+않는다.
+
+이 offset은 제어기 성능을 속이기 위한 값이 아니라, 현재 USD의 table/paper/tool 접촉
+환경에서 반복적으로 관측된 base-X systematic bias를 보정하는 workspace calibration으로
+보는 것이 맞다. 발표에서는 이것을 핵심 기여로 길게 설명할 필요는 없지만, 질문을 받으면
+“시뮬레이션 환경의 반복적인 tool/contact bias를 보정하기 위한 고정 workspace
+calibration을 적용했다”고 설명하면 된다.
+
+단, 이 값이 모든 도형, 모든 크기, 모든 위치에서 항상 최적이라고 단정하면 안 된다.
+같은 종이 위치, 같은 접촉력, 같은 drawing speed, 같은 펜 자세 조건에서는 비슷한 보정
+효과를 기대할 수 있지만, 도형 크기와 위치가 크게 바뀌거나 속도/접촉력이 달라지면 다시
+검증해야 한다.
+
 ## Guarded pen_down
 
 기존 `pen_down`은 계획된 높이까지 내려가는 동안 실제 접촉이 발생해도 마지막 샘플 전까지는 “아직 접촉 목표가 아님”으로 처리될 수 있었다.
@@ -186,6 +353,85 @@ Cartesian offset보다 일반화 가능성이 높고, full joint-command integra
 
 이 변경은 토크 제어로 바꾸는 것이 아니다. 여전히 joint-position backend를 쓰되, 자세가 무너지지 않도록 arm PD는 단단하게 유지하고, 접촉력은 normal-direction command offset으로 조절한다.
 만약 나중에 접촉력 overshoot가 다시 커지면 gain을 낮추기 전에 pen_down 높이, draw height, admittance limit, 접촉 센서 위치를 먼저 확인하는 것이 좋다.
+
+## 260607 contact tuning 결과
+
+최근 별 궤적 실험에서는 controller를 새로 바꾼 것이 아니라, 기존 DLS position
+controller와 normal-force admittance controller는 유지한 상태에서 force loop의
+phase별 limit만 실험했다.
+
+이 실험에서 가장 좋았던 설정은 baseline에 다음을 추가한 phase-gated normal-force
+admittance였다.
+
+```yaml
+lookahead_time_s: 0.0
+phase_gating_enabled: true
+max_drawing_lift_offset_m: 0.014
+max_drawing_offset_step_m: 0.0005
+```
+
+의미는 단순하다.
+
+- `phase_gating_enabled: true`는 drawing, pen_down 접촉 진입, pen_up release,
+  원하지 않는 접촉 release를 구분해서 normal-force admittance limit을 다르게 쓴다.
+- drawing 중에는 접촉력이 너무 커졌을 때 위로 빠져나갈 수 있는 lift offset을
+  8 mm에서 14 mm로 늘렸다.
+- offset step은 0.5 mm/step으로 제한해서 접촉력 보정이 갑자기 변하지 않게 했다.
+- lookahead는 꺼두었다. 별 궤적 테스트에서는 lookahead가 sharp corner에서
+  위치 추종을 개선하지 못하고 오히려 일부 지표를 악화시켰다.
+
+baseline과 비교하면 다음과 같다.
+
+```text
+baseline:
+  draw_xy_rmse      3.418 mm
+  draw max force   17.626 N
+  draw force p95    6.539 N
+  contact ratio    98.3 %
+
+phase_lift_014:
+  draw_xy_rmse      3.448 mm
+  draw max force   11.468 N
+  draw force p95    6.082 N
+  contact ratio   100.0 %
+```
+
+즉 08번 설정은 위치 추종 성능을 거의 잃지 않으면서 drawing 중 접촉 유지와
+force spike를 개선한 설정이다. 반대로 `phase_only`처럼 drawing lift limit을
+8 mm로 너무 작게 묶으면 위치 오차는 약간 줄어도 평균 접촉력이 14 N 이상으로
+올라갔기 때문에 추천하지 않는다.
+
+다만 모든 로그에서 약 47 N 수준의 큰 force spike가 `move_to_start` 초반에
+나타났다. 이 spike는 drawing 중 hybrid force loop의 문제가 아니라, 시작 자세에서
+첫 hover target으로 정렬되는 동안 펜이 종이를 순간적으로 누르는 startup 접근 문제로
+보는 것이 맞다. 그래서 다음 실험은 force gain을 더 키우는 것이 아니라, 안전한
+startup 접근 target을 앞에 추가하는 방식으로 진행한다.
+
+처음 시도한 방식은 첫 target의 5 cm 위로 바로 보내는 것이었는데, 실제 로그에서는
+초반에 tip z가 목표와 반대로 종이면까지 내려가며 약 30 N의 접촉이 발생했다. 이유는
+시작 자세와 첫 target 사이의 XY/orientation 오차가 큰 상태에서 하나의 높은 target을
+바로 추종하려고 했기 때문이다. 따라서 안전 접근은 다음처럼 더 명확히 나누는 편이
+맞다.
+
+```text
+현재 tip 위치에서 위로 lift
+-> 높은 z를 유지한 채 첫 target XY로 lateral move
+-> 첫 hover target으로 descent
+-> 기존 trajectory 실행
+```
+
+이후 실험한 startup-safe 후보는 08번 설정에 다음을 추가하는 방식이었다.
+
+```yaml
+startup_lift_height_m: 0.050
+startup_lift_steps: 80
+startup_lateral_steps: 100
+startup_descent_steps: 80
+```
+
+의도는 현재 위치에서 먼저 종이면과 거리를 확보한 다음, 종이 위에서 움직이지 않고
+공중에서 XY와 pen-axis 자세를 정렬하는 것이다. 이렇게 하면 drawing controller
+자체는 그대로 두면서 `move_to_start` 초반 접촉 스파이크만 분리해서 줄일 수 있다.
 
 ## JADE의 역할
 

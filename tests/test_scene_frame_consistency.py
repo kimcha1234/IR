@@ -15,10 +15,26 @@ ROOT = Path(__file__).resolve().parents[1]
 USD_PATH = ROOT / "usd" / "franka_drawing_scene_clean.usda"
 
 
-def test_project_config_does_not_use_shape_specific_command_offset() -> None:
+def test_project_config_uses_only_workspace_calibration_offsets() -> None:
     jade = load_jade_config(ROOT / "configs" / "jade.yaml")
 
-    assert np.allclose(jade.executor.command_position_offset_m, np.zeros(3))
+    np.testing.assert_allclose(jade.executor.command_position_offset_m, (0.0034, 0.0, 0.0))
+    assert jade.executor.lookahead_time_s == 0.0
+    assert jade.executor.lookahead_drawing_only is True
+    assert jade.executor.lookahead_same_stroke_only is True
+    assert jade.executor.tracking_mode == "differential"
+    assert jade.executor.iterative_servo_iterations == 1
+    assert jade.executor.startup_lift_height_m == 0.0
+    assert jade.executor.startup_lift_steps == 0
+    assert jade.executor.startup_lateral_steps == 0
+    assert jade.executor.startup_descent_steps == 0
+    assert jade.executor.tangent_integral_enabled is True
+    assert jade.executor.tangent_integral_gain == 0.20
+    assert jade.executor.tangent_integral_leak_per_s == 0.20
+    assert jade.executor.max_tangent_integral_offset_m == 0.008
+    assert jade.force_control.phase_gating_enabled is True
+    assert jade.force_control.max_drawing_lift_offset_m == 0.018
+    assert jade.force_control.unwanted_contact_release_enabled is True
 
 
 def test_scene_backend_commands_only_franka_arm_joints() -> None:

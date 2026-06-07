@@ -62,6 +62,7 @@ def main() -> None:
         max_linear_jerk_m_s3=jade.sampling.max_linear_jerk_m_s3,
         contact_force_ramp_duration_s=jade.sampling.contact_force_ramp_duration_s,
         pen_down_settle_duration_s=0.0 if args.mode == "hover" else jade.sampling.pen_down_settle_duration_s,
+        corner_dwell_duration_s=0.0 if args.mode == "hover" else jade.sampling.corner_dwell_duration_s,
     )
     if args.mode == "hover":
         samples = force_hover_samples(samples, frames.hover_height_m)

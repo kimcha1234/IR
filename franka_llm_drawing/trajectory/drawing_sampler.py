@@ -32,6 +32,7 @@ def sample_drawing_plan(
     max_linear_jerk_m_s3: float | None = None,
     contact_force_ramp_duration_s: float = 0.0,
     pen_down_settle_duration_s: float = 0.0,
+    corner_dwell_duration_s: float = 0.0,
 ) -> list[PoseSample]:
     """Sample a DrawingPlan into board-frame desired pen-tip poses.
 
@@ -47,6 +48,7 @@ def sample_drawing_plan(
     current_position: np.ndarray | None = None
     pen_state = "up"
     rotation = np.eye(3)
+    previous_action_name: str | None = None
     limits = TrajectoryLimits(
         max_linear_speed_m_s=max_linear_speed_m_s,
         max_linear_accel_m_s2=max_linear_accel_m_s2,
@@ -59,6 +61,21 @@ def sample_drawing_plan(
 
         start_time = samples[-1].t if samples else 0.0
         new_samples: list[PoseSample]
+        if _is_drawing_action(previous_action_name) and _is_drawing_action(action.name):
+            _append_without_duplicate_time(
+                samples,
+                _sample_contact_settle(
+                    current_position,
+                    rotation,
+                    duration_s=corner_dwell_duration_s,
+                    dt=dt,
+                    start_time=start_time,
+                    normal_force_n=default_normal_force_n,
+                    source_action="corner_dwell",
+                    stroke_id=action.stroke_id,
+                ),
+            )
+            start_time = samples[-1].t if samples else start_time
 
         if action.name == "move_to_start":
             _require_pen_state(pen_state, "up", action)
@@ -242,6 +259,7 @@ def sample_drawing_plan(
             raise ValueError(f"Unsupported action name: {action.name!r}.")
 
         _append_without_duplicate_time(samples, new_samples)
+        previous_action_name = action.name
 
     return samples
 
@@ -365,3 +383,7 @@ def _require_current(current_position: np.ndarray | None, action: PrimitiveActio
 def _require_pen_state(actual: str, expected: str, action: PrimitiveAction) -> None:
     if actual != expected:
         raise ValueError(f"{action.name} requires pen_state == {expected!r}.")
+
+
+def _is_drawing_action(action_name: str | None) -> bool:
+    return str(action_name or "") in {"draw_line", "draw_line_to", "draw_arc"}

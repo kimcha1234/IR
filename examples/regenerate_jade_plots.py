@@ -48,6 +48,14 @@ def main() -> None:
                     status=row["status"],
                     joint_limit_margin=_optional_float(row.get("joint_limit_margin")),
                     tip_orientation_error_deg=_optional_float(row.get("tip_orientation_error_deg")),
+                    commanded_position=_optional_position(row, "x_cmd", "y_cmd", "z_cmd"),
+                    desired_normal_force_n=_optional_float(row.get("desired_normal_force_n")),
+                    measured_normal_force_n=_optional_float(row.get("measured_normal_force_n")),
+                    filtered_normal_force_n=_optional_float(row.get("filtered_normal_force_n")),
+                    normal_force_error_n=_optional_float(row.get("normal_force_error_n")),
+                    normal_force_offset_m=_optional_float(row.get("normal_force_offset_m")),
+                    force_control_active=_optional_bool(row.get("force_control_active")),
+                    contact_active=_optional_bool(row.get("contact_active")),
                     policy_reason=row.get("policy_reason", ""),
                 )
             )
@@ -59,6 +67,19 @@ def _optional_float(value: str | None) -> float | None:
     if value is None or value == "":
         return None
     return float(value)
+
+
+def _optional_bool(value: str | None) -> bool | None:
+    if value is None or value == "":
+        return None
+    return str(value).lower() == "true"
+
+
+def _optional_position(row: dict[str, str], x_key: str, y_key: str, z_key: str) -> np.ndarray | None:
+    values = [row.get(x_key), row.get(y_key), row.get(z_key)]
+    if any(value is None or value == "" for value in values):
+        return None
+    return np.array([float(value) for value in values], dtype=float)
 
 
 if __name__ == "__main__":

@@ -42,6 +42,7 @@ class SamplingConfig:
     max_linear_jerk_m_s3: float | None = 0.40
     contact_force_ramp_duration_s: float = 0.0
     pen_down_settle_duration_s: float = 0.0
+    corner_dwell_duration_s: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -69,8 +70,18 @@ class AdaptivePolicyConfig:
 class ExecutorConfig:
     max_qdot_rad_s: float = 5.0
     max_delta_q_rad: float = 0.12
+    tracking_mode: str = "differential"
+    iterative_servo_iterations: int = 1
+    iterative_servo_drawing_only: bool = True
     command_integration_enabled: bool = False
     max_command_tracking_error_rad: float = 0.35
+    startup_lift_height_m: float = 0.0
+    startup_lift_steps: int = 0
+    startup_lateral_steps: int = 0
+    startup_descent_steps: int = 0
+    lookahead_time_s: float = 0.0
+    lookahead_drawing_only: bool = True
+    lookahead_same_stroke_only: bool = True
     tangent_integral_enabled: bool = True
     tangent_integral_gain: float = 0.20
     tangent_integral_leak_per_s: float = 0.20
@@ -92,6 +103,8 @@ class ExecutorConfig:
 @dataclass(frozen=True)
 class ForceControlConfig:
     enabled: bool = True
+    phase_gating_enabled: bool = False
+    unwanted_contact_release_enabled: bool = True
     desired_normal_force_n: float = 1.0
     contact_threshold_n: float = 0.05
     kp_offset_m_per_n: float = 0.0015
@@ -100,6 +113,13 @@ class ForceControlConfig:
     max_press_offset_m: float = 0.004
     max_lift_offset_m: float = 0.025
     max_offset_step_m: float = 0.0015
+    max_drawing_press_offset_m: float = 0.004
+    max_drawing_lift_offset_m: float = 0.008
+    max_drawing_offset_step_m: float = 0.0005
+    max_release_lift_offset_m: float = 0.025
+    max_release_offset_step_m: float = 0.0015
+    max_unwanted_contact_lift_m: float = 0.025
+    max_unwanted_contact_offset_step_m: float = 0.0015
     force_filter_alpha: float = 0.35
     contact_joint_stiffness: float = 400.0
     contact_joint_damping: float = 80.0
@@ -201,6 +221,9 @@ def load_jade_config(path: str | Path) -> JadeConfig:
             pen_down_settle_duration_s=float(
                 sampling.get("pen_down_settle_duration_s", SamplingConfig.pen_down_settle_duration_s)
             ),
+            corner_dwell_duration_s=float(
+                sampling.get("corner_dwell_duration_s", SamplingConfig.corner_dwell_duration_s)
+            ),
         ),
         thresholds=ThresholdConfig(**_merge_dataclass_defaults(ThresholdConfig, thresholds)),
         adaptive_policy=AdaptivePolicyConfig(
@@ -296,11 +319,27 @@ def _load_executor_config(values: dict[str, Any]) -> ExecutorConfig:
     return ExecutorConfig(
         max_qdot_rad_s=float(values.get("max_qdot_rad_s", defaults.max_qdot_rad_s)),
         max_delta_q_rad=float(values.get("max_delta_q_rad", defaults.max_delta_q_rad)),
+        tracking_mode=str(values.get("tracking_mode", defaults.tracking_mode)),
+        iterative_servo_iterations=int(
+            values.get("iterative_servo_iterations", defaults.iterative_servo_iterations)
+        ),
+        iterative_servo_drawing_only=bool(
+            values.get("iterative_servo_drawing_only", defaults.iterative_servo_drawing_only)
+        ),
         command_integration_enabled=bool(
             values.get("command_integration_enabled", defaults.command_integration_enabled)
         ),
         max_command_tracking_error_rad=float(
             values.get("max_command_tracking_error_rad", defaults.max_command_tracking_error_rad)
+        ),
+        startup_lift_height_m=float(values.get("startup_lift_height_m", defaults.startup_lift_height_m)),
+        startup_lift_steps=int(values.get("startup_lift_steps", defaults.startup_lift_steps)),
+        startup_lateral_steps=int(values.get("startup_lateral_steps", defaults.startup_lateral_steps)),
+        startup_descent_steps=int(values.get("startup_descent_steps", defaults.startup_descent_steps)),
+        lookahead_time_s=float(values.get("lookahead_time_s", defaults.lookahead_time_s)),
+        lookahead_drawing_only=bool(values.get("lookahead_drawing_only", defaults.lookahead_drawing_only)),
+        lookahead_same_stroke_only=bool(
+            values.get("lookahead_same_stroke_only", defaults.lookahead_same_stroke_only)
         ),
         tangent_integral_enabled=bool(values.get("tangent_integral_enabled", defaults.tangent_integral_enabled)),
         tangent_integral_gain=float(values.get("tangent_integral_gain", defaults.tangent_integral_gain)),

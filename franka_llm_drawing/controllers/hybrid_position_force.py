@@ -59,6 +59,8 @@ class NormalForceAdmittanceConfig:
     """
 
     enabled: bool = True
+    phase_gating_enabled: bool = False
+    unwanted_contact_release_enabled: bool = True
     desired_normal_force_n: float = 1.0
     contact_threshold_n: float = 0.05
     kp_offset_m_per_n: float = 0.0015
@@ -67,6 +69,13 @@ class NormalForceAdmittanceConfig:
     max_press_offset_m: float = 0.004
     max_lift_offset_m: float = 0.025
     max_offset_step_m: float = 0.0015
+    max_drawing_press_offset_m: float = 0.004
+    max_drawing_lift_offset_m: float = 0.008
+    max_drawing_offset_step_m: float = 0.0005
+    max_release_lift_offset_m: float = 0.025
+    max_release_offset_step_m: float = 0.0015
+    max_unwanted_contact_lift_m: float = 0.025
+    max_unwanted_contact_offset_step_m: float = 0.0015
     force_filter_alpha: float = 0.35
 
 
@@ -121,13 +130,13 @@ class NormalForceAdmittanceController:
             else float(self.config.desired_normal_force_n)
         )
         contact_active = self._filtered_force >= float(self.config.contact_threshold_n)
-        pen_up_release = target.source_action_name == "pen_up"
-        guarded_pen_down_contact = target.source_action_name == "pen_down" and contact_active
-        force_target_desired = (target.pen_contact_desired or guarded_pen_down_contact) and not pen_up_release
+        phase = _force_phase(target, contact_active, self.config)
+        force_target_desired = phase in {"drawing", "guarded_pen_down"}
+        pen_up_release = phase == "pen_up_release"
         desired_force = 0.0 if pen_up_release else nominal_desired_force if force_target_desired else 0.0
         force_active = bool(
             self.config.enabled
-            and (force_target_desired or contact_active or pen_up_release)
+            and (force_target_desired or pen_up_release or phase == "unwanted_contact_release")
         )
         if not force_active:
             self._normal_offset_m = 0.0
@@ -169,10 +178,8 @@ class NormalForceAdmittanceController:
             + self.config.ki_offset_m_per_n_s * self._force_error_integral
             + self.config.kd_offset_m_s_per_n * derivative
         )
-        raw_offset = float(
-            np.clip(raw_offset, -abs(self.config.max_press_offset_m), abs(self.config.max_lift_offset_m))
-        )
-        step = float(abs(self.config.max_offset_step_m))
+        press_limit, lift_limit, step = _phase_offset_limits(phase, self.config)
+        raw_offset = float(np.clip(raw_offset, -press_limit, lift_limit))
         self._normal_offset_m += float(np.clip(raw_offset - self._normal_offset_m, -step, step))
 
         normal = _normalized(board_normal_base, "board_normal_base")
@@ -194,6 +201,68 @@ class NormalForceAdmittanceController:
             force_control_active=True,
         )
         return adjusted_target, diagnostics
+
+
+def _force_phase(
+    target: CartesianTrajectoryPoint,
+    contact_active: bool,
+    config: NormalForceAdmittanceConfig,
+) -> str:
+    action = str(target.source_action_name or "")
+    drawing_action = action in {"draw_line", "draw_line_to", "draw_arc"}
+    if not config.phase_gating_enabled:
+        pen_up_release = action == "pen_up"
+        guarded_pen_down_contact = action == "pen_down" and contact_active
+        force_target_desired = (target.pen_contact_desired or guarded_pen_down_contact) and not pen_up_release
+        if force_target_desired:
+            return "drawing"
+        if pen_up_release:
+            return "pen_up_release"
+        if contact_active:
+            return "unwanted_contact_release"
+        return "inactive"
+
+    if drawing_action and target.pen_contact_desired:
+        return "drawing"
+    if action == "pen_down" and (target.pen_contact_desired or contact_active):
+        return "guarded_pen_down"
+    if action == "pen_up":
+        return "pen_up_release"
+    if contact_active and config.unwanted_contact_release_enabled:
+        return "unwanted_contact_release"
+    return "inactive"
+
+
+def _phase_offset_limits(phase: str, config: NormalForceAdmittanceConfig) -> tuple[float, float, float]:
+    if not config.phase_gating_enabled:
+        return (
+            abs(float(config.max_press_offset_m)),
+            abs(float(config.max_lift_offset_m)),
+            abs(float(config.max_offset_step_m)),
+        )
+    if phase in {"drawing", "guarded_pen_down"}:
+        return (
+            abs(float(config.max_drawing_press_offset_m)),
+            abs(float(config.max_drawing_lift_offset_m)),
+            abs(float(config.max_drawing_offset_step_m)),
+        )
+    if phase == "pen_up_release":
+        return (
+            abs(float(config.max_press_offset_m)),
+            abs(float(config.max_release_lift_offset_m)),
+            abs(float(config.max_release_offset_step_m)),
+        )
+    if phase == "unwanted_contact_release":
+        return (
+            abs(float(config.max_press_offset_m)),
+            abs(float(config.max_unwanted_contact_lift_m)),
+            abs(float(config.max_unwanted_contact_offset_step_m)),
+        )
+    return (
+        abs(float(config.max_press_offset_m)),
+        abs(float(config.max_lift_offset_m)),
+        abs(float(config.max_offset_step_m)),
+    )
 
 
 class HybridPositionForceController:
