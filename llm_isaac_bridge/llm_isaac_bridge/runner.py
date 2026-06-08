@@ -47,6 +47,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--execute-isaac", action="store_true", help="Actually launch Isaac after validation.")
     parser.add_argument("--print-isaac-command", action="store_true", help="Print the Isaac command even if not executing.")
     parser.add_argument("--stream-planner-events", action="store_true", help="Forward planner event stream to stderr.")
+    parser.add_argument("--debug-draw", action="store_true", help="Pass --debug-draw to the Isaac runner.")
+    parser.add_argument(
+        "--start-delay-s",
+        type=_nonnegative_float,
+        default=0.0,
+        help="Pass a start delay to the Isaac runner so screen recording can be prepared.",
+    )
+    parser.add_argument("--keep-open", action="store_true", help="Keep Isaac Sim open after execution finishes.")
     return parser
 
 
@@ -115,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         mode=args.mode,
         isaaclab_root=args.isaaclab_root,
         setup_only=args.setup_only,
+        extra_args=_isaac_extra_args(args),
     )
     if args.print_isaac_command or not args.execute_isaac:
         print("[INFO] Isaac command:", flush=True)
@@ -140,6 +149,24 @@ def _rooted(output_root: Path | None, default_path: Path) -> Path:
         return default_path
     suffix = default_path.name
     return output_root / suffix
+
+
+def _isaac_extra_args(args: argparse.Namespace) -> list[str]:
+    extra: list[str] = []
+    if args.debug_draw:
+        extra.append("--debug-draw")
+    if args.start_delay_s > 0.0:
+        extra.extend(["--start-delay-s", str(float(args.start_delay_s))])
+    if args.keep_open:
+        extra.append("--keep-open")
+    return extra
+
+
+def _nonnegative_float(value: str) -> float:
+    parsed = float(value)
+    if parsed < 0.0:
+        raise argparse.ArgumentTypeError("value must be non-negative")
+    return parsed
 
 
 if __name__ == "__main__":

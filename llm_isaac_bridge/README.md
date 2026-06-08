@@ -84,11 +84,19 @@ IsaacLab 루트가 `/home/kimchangyeol/IsaacLab`일 때:
 cd /home/kimchangyeol/IsaacLab/IR
 PYTHONPATH=/home/kimchangyeol/IsaacLab/IR/llm_isaac_bridge \
 python -m llm_isaac_bridge \
-  --command "중앙에 반지름 4cm짜리 원을 그려줘" \
+  --command "중앙에 8cm 별을 그려줘" \
   --planner-mode no-api \
   --mode contact \
+  --debug-draw \
+  --start-delay-s 5 \
+  --keep-open \
   --execute-isaac
 ```
+
+위 명령은 자연어 입력을 plan JSON으로 변환하고 검증한 뒤 Isaac Sim을 실행한다.
+`--debug-draw`는 planned/actual trajectory와 pen-tip frame을 viewport에 표시하고,
+`--start-delay-s 5`는 화면 녹화 준비를 위해 로봇 동작 전 5초간 대기한다.
+`--keep-open`은 실행 종료 후 Isaac Sim 창을 닫지 않는다.
 
 실제 LLM을 쓰려면 `OPENAI_API_KEY`가 설정된 환경에서 `--planner-mode agentic`
 또는 `--planner-mode template`을 사용한다.
