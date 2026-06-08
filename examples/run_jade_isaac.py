@@ -54,6 +54,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-samples", type=int, default=0, help="Limit trajectory samples for quick smoke tests.")
     parser.add_argument("--settle-steps", type=int, default=150)
     parser.add_argument("--hold-steps", type=int, default=60)
+    parser.add_argument(
+        "--start-delay-s",
+        type=float,
+        default=0.0,
+        help="Keep the initialized Isaac Sim scene idle for this many seconds before robot motion starts.",
+    )
     parser.add_argument("--disable-force-control", action="store_true", help="Disable contact-mode normal-force feedback.")
     parser.add_argument("--force-target-n", type=float, default=None, help="Override contact-mode desired normal force.")
     parser.add_argument("--keep-open", action="store_true", help="Keep Isaac Sim open after the trajectory finishes.")
@@ -329,6 +335,12 @@ def run_with_isaac(args: argparse.Namespace, simulation_app) -> None:
             flush=True,
         )
     print(f"[INFO] trajectory samples: {len(cartesian)}, total control targets: {len(targets)}", flush=True)
+    _idle_before_control(
+        sim,
+        simulation_app,
+        delay_s=max(0.0, float(args.start_delay_s)),
+        physics_dt=float(scene_cfg.physics_dt),
+    )
 
     logged_step = 0
     pre_trajectory_log_count = 0
@@ -545,6 +557,19 @@ def force_hover_samples(samples: list[PoseSample], hover_height_m: float) -> lis
             )
         )
     return output
+
+
+def _idle_before_control(sim, simulation_app, *, delay_s: float, physics_dt: float) -> None:
+    """Let the viewport run briefly before the first commanded robot motion."""
+
+    if delay_s <= 0.0:
+        return
+    steps = max(1, int(round(delay_s / max(physics_dt, 1e-9))))
+    print(f"[INFO] start delay: waiting {delay_s:.1f}s before robot motion starts", flush=True)
+    for _ in range(steps):
+        if not simulation_app.is_running():
+            break
+        sim.step()
 
 
 def scale_plan_speeds(plan, speed_scale: float):

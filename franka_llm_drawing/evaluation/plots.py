@@ -10,6 +10,9 @@ import numpy as np
 
 from franka_llm_drawing.evaluation.execution_logger import ExecutionLogger
 
+_DRAWING_ACTIONS = {"draw_line", "draw_line_to", "draw_arc"}
+_FORCE_OVERLAY_EDGE_STEP_THRESHOLD_M = 0.0002
+
 
 def write_jade_plots(logger: ExecutionLogger, output_dir: str | Path) -> list[Path]:
     out = Path(output_dir)
@@ -23,17 +26,30 @@ def write_jade_plots(logger: ExecutionLogger, output_dir: str | Path) -> list[Pa
     desired = logger.desired_positions()
     actual = logger.actual_positions()
     t = logger.times()
-    _write_xy_plot(paths[0], desired[:, :2], actual[:, :2])
-    draw_rows = [row for row in logger.rows if row.action_type in {"draw_line", "draw_line_to", "draw_arc"}]
+    draw_entries = [(index, row) for index, row in enumerate(logger.rows) if row.action_type in _DRAWING_ACTIONS]
+    draw_rows = [row for _, row in draw_entries]
+    draw_segment_ids_all = _contiguous_segment_ids([index for index, _ in draw_entries])
+    draw_desired: np.ndarray | None = None
+    draw_actual: np.ndarray | None = None
+    draw_segment_ids: np.ndarray | None = None
     if len(draw_rows) >= 2:
         draw_desired = np.asarray([row.desired_position for row in draw_rows], dtype=float)
         draw_actual = np.asarray([row.actual_position for row in draw_rows], dtype=float)
+        draw_segment_ids = draw_segment_ids_all
+        _write_xy_plot(paths[0], draw_desired[:, :2], draw_actual[:, :2], segment_ids=draw_segment_ids)
         draw_path = out / "planned_vs_actual_xy_draw_only.svg"
         paths.append(draw_path)
-        _write_xy_plot(draw_path, draw_desired[:, :2], draw_actual[:, :2])
+        _write_xy_plot(draw_path, draw_desired[:, :2], draw_actual[:, :2], segment_ids=draw_segment_ids)
         offset_path = out / "planned_vs_actual_xy_offset_compensated.svg"
         paths.append(offset_path)
-        _write_xy_offset_compensated_plot(offset_path, draw_desired[:, :2], draw_actual[:, :2])
+        _write_xy_offset_compensated_plot(
+            offset_path,
+            draw_desired[:, :2],
+            draw_actual[:, :2],
+            segment_ids=draw_segment_ids,
+        )
+    else:
+        _write_xy_plot(paths[0], desired[:, :2], actual[:, :2])
     _write_line_plot(paths[1], t, logger.error_norms(), "tracking error norm [m]")
     _write_line_plot(
         paths[2],
@@ -75,16 +91,25 @@ def write_jade_plots(logger: ExecutionLogger, output_dir: str | Path) -> list[Pa
             ],
             ylabel="normal force [N]",
         )
-        force_path = out / "actual_xy_colored_by_force.svg"
-        paths.append(force_path)
-        _write_xy_colored_by_scalar_plot(
-            force_path,
-            actual[:, :2],
-            measured_force,
-            xlabel="x [m]",
-            ylabel="y [m]",
-            color_label="measured normal force [N]",
-        )
+        draw_measured_force = _optional_series([row.measured_normal_force_n for row in draw_rows])
+        if (
+            draw_actual is not None
+            and draw_desired is not None
+            and draw_segment_ids is not None
+            and len(draw_rows) >= 2
+            and draw_measured_force is not None
+        ):
+            force_path = out / "actual_xy_colored_by_force.svg"
+            paths.append(force_path)
+            _write_xy_colored_by_scalar_plot(
+                force_path,
+                draw_actual[:, :2],
+                draw_measured_force,
+                segment_ids=draw_segment_ids,
+                xlabel="x [m]",
+                ylabel="y [m]",
+                color_label="measured normal force [N]",
+            )
     force_offsets = _optional_series([row.normal_force_offset_m for row in logger.rows])
     if force_offsets is not None:
         path = out / "normal_force_offset.svg"
@@ -93,14 +118,26 @@ def write_jade_plots(logger: ExecutionLogger, output_dir: str | Path) -> list[Pa
     return paths
 
 
-def _write_xy_plot(path: Path, desired_xy: np.ndarray, actual_xy: np.ndarray) -> None:
-    series = [(desired_xy[:, 0], desired_xy[:, 1], "#1f77b4", "planned")]
+def _write_xy_plot(
+    path: Path,
+    desired_xy: np.ndarray,
+    actual_xy: np.ndarray,
+    *,
+    segment_ids: np.ndarray | None = None,
+) -> None:
+    series = _segmented_xy_series(desired_xy, "#1f77b4", "planned", segment_ids)
     if actual_xy.size:
-        series.append((actual_xy[:, 0], actual_xy[:, 1], "#d62728", "actual"))
+        series.extend(_segmented_xy_series(actual_xy, "#d62728", "actual", segment_ids))
     _write_svg(path, series, "x [m]", "y [m]", equal_aspect=True)
 
 
-def _write_xy_offset_compensated_plot(path: Path, desired_xy: np.ndarray, actual_xy: np.ndarray) -> None:
+def _write_xy_offset_compensated_plot(
+    path: Path,
+    desired_xy: np.ndarray,
+    actual_xy: np.ndarray,
+    *,
+    segment_ids: np.ndarray | None = None,
+) -> None:
     desired = np.asarray(desired_xy, dtype=float)
     actual = np.asarray(actual_xy, dtype=float)
     if desired.shape != actual.shape or desired.ndim != 2 or desired.shape[1] != 2:
@@ -110,8 +147,13 @@ def _write_xy_offset_compensated_plot(path: Path, desired_xy: np.ndarray, actual
     _write_svg(
         path,
         [
-            (desired[:, 0], desired[:, 1], "#1f77b4", "planned"),
-            (compensated[:, 0], compensated[:, 1], "#d62728", f"actual + mean offset ({offset[0]:+.4f}, {offset[1]:+.4f}) m"),
+            *_segmented_xy_series(desired, "#1f77b4", "planned", segment_ids),
+            *_segmented_xy_series(
+                compensated,
+                "#d62728",
+                f"actual + mean offset ({offset[0]:+.4f}, {offset[1]:+.4f}) m",
+                segment_ids,
+            ),
         ],
         "x [m]",
         "y [m]",
@@ -139,6 +181,7 @@ def _write_xy_colored_by_scalar_plot(
     xy: np.ndarray,
     scalar: np.ndarray,
     *,
+    segment_ids: np.ndarray | None = None,
     xlabel: str,
     ylabel: str,
     color_label: str,
@@ -149,6 +192,12 @@ def _write_xy_colored_by_scalar_plot(
         raise ValueError(f"xy must have shape (N, 2), got {xy_arr.shape}.")
     if scalar_arr.shape != (xy_arr.shape[0],):
         raise ValueError(f"scalar must have shape ({xy_arr.shape[0]},), got {scalar_arr.shape}.")
+    if segment_ids is None:
+        segment_ids_arr = np.zeros(xy_arr.shape[0], dtype=int)
+    else:
+        segment_ids_arr = np.asarray(segment_ids)
+        if segment_ids_arr.shape != (xy_arr.shape[0],):
+            raise ValueError(f"segment_ids must have shape ({xy_arr.shape[0]},), got {segment_ids_arr.shape}.")
     width, height = 860, 560
     left, right, top, bottom = 82, 118, 46, 76
     x_min, x_max = _bounds(xy_arr[:, 0])
@@ -198,6 +247,8 @@ def _write_xy_colored_by_scalar_plot(
         x_screen = sx(xy_arr[:, 0])
         y_screen = sy(xy_arr[:, 1])
         for i in range(xy_arr.shape[0] - 1):
+            if segment_ids_arr[i] != segment_ids_arr[i + 1]:
+                continue
             value = 0.5 * (scalar_arr[i] + scalar_arr[i + 1])
             color = _scalar_color(value, f_min, f_max)
             elements.append(
@@ -270,10 +321,14 @@ def _write_svg(
         )
     elements.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="none" stroke="#333" stroke-width="1"/>')
     for index, (x_values, y_values, color, label) in enumerate(series):
+        if np.asarray(x_values).size == 0:
+            continue
         points = " ".join(
             f"{x:.2f},{y:.2f}" for x, y in zip(sx(np.asarray(x_values)), sy(np.asarray(y_values)))
         )
         elements.append(f'<polyline fill="none" stroke="{color}" stroke-width="2" points="{points}"/>')
+        if not label:
+            continue
         legend_x = width - right - 145
         legend_y = top + 18 + 20 * index
         elements.append(f'<line x1="{legend_x}" y1="{legend_y - 4}" x2="{legend_x + 28}" y2="{legend_y - 4}" stroke="{color}" stroke-width="3"/>')
@@ -413,3 +468,99 @@ def _optional_series(values: list[float | None]) -> np.ndarray | None:
     if not np.isfinite(series).all():
         return None
     return series
+
+
+def _contiguous_segment_ids(indices: list[int]) -> np.ndarray:
+    if not indices:
+        return np.empty(0, dtype=int)
+    segment_ids = np.zeros(len(indices), dtype=int)
+    segment = 0
+    previous = int(indices[0])
+    for offset, index in enumerate(indices[1:], start=1):
+        current = int(index)
+        if current != previous + 1:
+            segment += 1
+        segment_ids[offset] = segment
+        previous = current
+    return segment_ids
+
+
+def _trim_stationary_segment_edges(
+    xy: np.ndarray,
+    scalar: np.ndarray,
+    segment_ids: np.ndarray,
+    *,
+    min_step_m: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Drop non-moving prefix/suffix strokes from XY plots.
+
+    Kept as a helper for experiments, but the final presentation plots preserve
+    the full drawing action so closed shapes stay closed.
+    """
+
+    mask = _stationary_segment_edge_mask(xy, segment_ids, min_step_m=min_step_m)
+    if np.count_nonzero(mask) < 2:
+        return xy, scalar, segment_ids
+    return xy[mask], scalar[mask], segment_ids[mask]
+
+
+def _stationary_segment_edge_mask(
+    xy: np.ndarray,
+    segment_ids: np.ndarray,
+    *,
+    min_step_m: float,
+) -> np.ndarray:
+    if xy.shape[0] < 3 or min_step_m <= 0.0:
+        return np.ones(xy.shape[0], dtype=bool)
+    keep = np.zeros(xy.shape[0], dtype=bool)
+    for segment_id in _ordered_unique(segment_ids):
+        indices = np.flatnonzero(segment_ids == segment_id)
+        if indices.size < 3:
+            keep[indices] = True
+            continue
+        points = xy[indices]
+        steps = np.linalg.norm(np.diff(points, axis=0), axis=1)
+        start = 0
+        while start < steps.size and steps[start] < min_step_m:
+            start += 1
+        stop = indices.size
+        while stop > start + 1 and steps[stop - 2] < min_step_m:
+            stop -= 1
+        if stop - start < 2:
+            keep[indices] = True
+        else:
+            keep[indices[start:stop]] = True
+    return keep
+
+
+def _segmented_xy_series(
+    xy: np.ndarray,
+    color: str,
+    label: str,
+    segment_ids: np.ndarray | None,
+) -> list[tuple[np.ndarray, np.ndarray, str, str]]:
+    xy_arr = np.asarray(xy, dtype=float)
+    if xy_arr.ndim != 2 or xy_arr.shape[1] != 2:
+        raise ValueError(f"xy must have shape (N, 2), got {xy_arr.shape}.")
+    if segment_ids is None:
+        return [(xy_arr[:, 0], xy_arr[:, 1], color, label)]
+    segment_ids_arr = np.asarray(segment_ids)
+    if segment_ids_arr.shape != (xy_arr.shape[0],):
+        raise ValueError(f"segment_ids must have shape ({xy_arr.shape[0]},), got {segment_ids_arr.shape}.")
+    series: list[tuple[np.ndarray, np.ndarray, str, str]] = []
+    for offset, segment_id in enumerate(_ordered_unique(segment_ids_arr)):
+        indices = np.flatnonzero(segment_ids_arr == segment_id)
+        points = xy_arr[indices]
+        series.append((points[:, 0], points[:, 1], color, label if offset == 0 else ""))
+    return series
+
+
+def _ordered_unique(values: np.ndarray) -> list[object]:
+    out: list[object] = []
+    seen = set()
+    for value in values.tolist():
+        if value in seen:
+            continue
+        out.append(value)
+        seen.add(value)
+    return out

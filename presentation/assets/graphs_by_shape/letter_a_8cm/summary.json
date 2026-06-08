@@ -1,0 +1,77 @@
+{
+  "mode": "contact",
+  "samples_logged": 1682,
+  "command_joint_names": [
+    "panda_joint1",
+    "panda_joint2",
+    "panda_joint3",
+    "panda_joint4",
+    "panda_joint5",
+    "panda_joint6",
+    "panda_joint7"
+  ],
+  "tracking_mode": "differential",
+  "iterative_servo_iterations": 1,
+  "iterative_servo_drawing_only": true,
+  "startup_safe_approach_steps": 0,
+  "settle_steps": 150,
+  "hold_steps": 60,
+  "xy_rmse_m": 0.007431737325511806,
+  "max_xy_error_m": 0.08540029647039563,
+  "z_rmse_m": 0.00725891038614454,
+  "settle_mean_error_m": {
+    "x_des_minus_act": -0.005329974728899645,
+    "y_des_minus_act": -0.0065775844521447436,
+    "z_des_minus_act": 0.013168906906865925,
+    "x_rmse": 0.020060300466235834,
+    "y_rmse": 0.01295695728123217,
+    "z_rmse": 0.013811268767421817
+  },
+  "active_trajectory_mean_error_m": {
+    "x_des_minus_act": 0.001811117396988032,
+    "y_des_minus_act": -1.692544354547663e-05,
+    "z_des_minus_act": 0.00374139261650948,
+    "x_rmse": 0.0021148675482036885,
+    "y_rmse": 0.000339135115358477,
+    "z_rmse": 0.006223891401937629
+  },
+  "draw_sample_count": 734,
+  "draw_xy_rmse_m": 0.0011968256258087567,
+  "draw_max_xy_error_m": 0.002302932752380691,
+  "draw_z_rmse_m": 9.087740965518432e-07,
+  "draw_mean_error_m": {
+    "x_des_minus_act": 0.0009160963684966194,
+    "y_des_minus_act": -1.3587976163111666e-05,
+    "z_des_minus_act": -8.942632529612451e-07,
+    "x_rmse": 0.00113753500388603,
+    "y_rmse": 0.00037202915682313245,
+    "z_rmse": 9.08774096551843e-07
+  },
+  "tip_orientation_rmse_deg": 1.5019582033617491,
+  "tip_orientation_max_error_deg": 4.558089755448651,
+  "draw_tip_orientation_rmse_deg": 1.360618647730161,
+  "draw_tip_orientation_max_error_deg": 1.5271485692092472,
+  "min_joint_limit_margin_rad": 0.6144347255706788,
+  "normal_force": {
+    "active_samples": 1220,
+    "contact_ratio": 0.7934426229508197,
+    "desired_mean_n": 0.728688524590164,
+    "measured_mean_n": 4.16474152502955,
+    "measured_max_n": 44.79067611694336,
+    "force_rmse_n": 5.453786881713564,
+    "force_mean_error_n": -3.436053000439386,
+    "offset_min_m": -0.0005,
+    "offset_max_m": 0.025
+  },
+  "draw_normal_force": {
+    "active_samples": 734,
+    "contact_ratio": 1.0,
+    "desired_mean_n": 1.0,
+    "measured_mean_n": 4.514345301594331,
+    "measured_max_n": 8.977030754089355,
+    "force_rmse_n": 3.6959135012146684,
+    "force_mean_error_n": -3.5143453015943313,
+    "offset_min_m": 0.008917776636172499,
+    "offset_max_m": 0.012964961824220037
+  }
+}

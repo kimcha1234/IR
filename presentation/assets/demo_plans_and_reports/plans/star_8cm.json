@@ -1,0 +1,251 @@
+{
+  "schema_version": "1.0",
+  "source_command": "중앙에 8cm 별을 그려줘",
+  "goal": {
+    "shape_type": "star",
+    "center": {
+      "x": 0.0,
+      "y": 0.0,
+      "unit": "m"
+    },
+    "radius_m": null,
+    "side_length_m": 0.08,
+    "size_m": 0.08,
+    "orientation_rad": 0.0,
+    "letter": null,
+    "frame": "board",
+    "assumptions": [
+      "bridge-local no-api fallback was used"
+    ],
+    "warnings": [
+      "robot reachability and IK feasibility are checked downstream by JADE"
+    ]
+  },
+  "strokes": [
+    {
+      "type": "line",
+      "stroke_id": "stroke_001",
+      "start": {
+        "x": 2.4492935982947064e-18,
+        "y": 0.04,
+        "unit": "m"
+      },
+      "end": {
+        "x": -0.02351141009169893,
+        "y": -0.032360679774997896,
+        "unit": "m"
+      }
+    },
+    {
+      "type": "line",
+      "stroke_id": "stroke_002",
+      "start": {
+        "x": -0.02351141009169893,
+        "y": -0.032360679774997896,
+        "unit": "m"
+      },
+      "end": {
+        "x": 0.038042260651806145,
+        "y": 0.012360679774997886,
+        "unit": "m"
+      }
+    },
+    {
+      "type": "line",
+      "stroke_id": "stroke_003",
+      "start": {
+        "x": 0.038042260651806145,
+        "y": 0.012360679774997886,
+        "unit": "m"
+      },
+      "end": {
+        "x": -0.038042260651806145,
+        "y": 0.0123606797749979,
+        "unit": "m"
+      }
+    },
+    {
+      "type": "line",
+      "stroke_id": "stroke_004",
+      "start": {
+        "x": -0.038042260651806145,
+        "y": 0.0123606797749979,
+        "unit": "m"
+      },
+      "end": {
+        "x": 0.023511410091698916,
+        "y": -0.0323606797749979,
+        "unit": "m"
+      }
+    },
+    {
+      "type": "line",
+      "stroke_id": "stroke_005",
+      "start": {
+        "x": 0.023511410091698916,
+        "y": -0.0323606797749979,
+        "unit": "m"
+      },
+      "end": {
+        "x": 2.4492935982947064e-18,
+        "y": 0.04,
+        "unit": "m"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "name": "move_to_start",
+      "frame": "board",
+      "params": {
+        "target": {
+          "x": 2.4492935982947064e-18,
+          "y": 0.04,
+          "z": 0.02,
+          "unit": "m"
+        },
+        "hover_height_m": 0.02
+      }
+    },
+    {
+      "name": "align_pen_orientation",
+      "frame": "board",
+      "params": {
+        "mode": "normal_to_board"
+      }
+    },
+    {
+      "name": "pen_down",
+      "frame": "board",
+      "params": {
+        "target": {
+          "x": 2.4492935982947064e-18,
+          "y": 0.04,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "speed_m_s": 0.01
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "stroke_id": "stroke_001",
+      "params": {
+        "start": {
+          "x": 2.4492935982947064e-18,
+          "y": 0.04,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "end": {
+          "x": -0.02351141009169893,
+          "y": -0.032360679774997896,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "speed_m_s": 0.025
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "stroke_id": "stroke_002",
+      "params": {
+        "start": {
+          "x": -0.02351141009169893,
+          "y": -0.032360679774997896,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "end": {
+          "x": 0.038042260651806145,
+          "y": 0.012360679774997886,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "speed_m_s": 0.025
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "stroke_id": "stroke_003",
+      "params": {
+        "start": {
+          "x": 0.038042260651806145,
+          "y": 0.012360679774997886,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "end": {
+          "x": -0.038042260651806145,
+          "y": 0.0123606797749979,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "speed_m_s": 0.025
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "stroke_id": "stroke_004",
+      "params": {
+        "start": {
+          "x": -0.038042260651806145,
+          "y": 0.0123606797749979,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "end": {
+          "x": 0.023511410091698916,
+          "y": -0.0323606797749979,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "speed_m_s": 0.025
+      }
+    },
+    {
+      "name": "draw_line",
+      "frame": "board",
+      "stroke_id": "stroke_005",
+      "params": {
+        "start": {
+          "x": 0.023511410091698916,
+          "y": -0.0323606797749979,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "end": {
+          "x": 2.4492935982947064e-18,
+          "y": 0.04,
+          "z": 0.0,
+          "unit": "m"
+        },
+        "speed_m_s": 0.025
+      }
+    },
+    {
+      "name": "pen_up",
+      "frame": "board",
+      "params": {
+        "lift_height_m": 0.02,
+        "speed_m_s": 0.02
+      }
+    }
+  ],
+  "diagnostics": {
+    "validation_ok": true,
+    "assumptions": [
+      "bridge-local no-api fallback was used"
+    ],
+    "warnings": [
+      "robot reachability and IK feasibility are checked downstream by JADE"
+    ],
+    "errors": [],
+    "requires_robot_feasibility_check": true,
+    "note": "Generated by llm_isaac_bridge fallback because planner dependencies were unavailable."
+  }
+}

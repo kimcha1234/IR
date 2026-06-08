@@ -1,0 +1,202 @@
+relative_path,type,suggested_use
+README_assets.md,md,asset index
+asset_manifest.csv,csv,asset index
+entire_robot.png,png,Isaac Sim environment screenshot
+demo_plans_and_reports/isaac_commands.sh,sh,LLM/action-plan evidence
+demo_plans_and_reports/manifest.json,json,LLM/action-plan evidence
+demo_plans_and_reports/plans/circle_r4cm.json,json,LLM/action-plan evidence
+demo_plans_and_reports/plans/house_8cm.json,json,LLM/action-plan evidence
+demo_plans_and_reports/plans/letter_a_8cm.json,json,LLM/action-plan evidence
+demo_plans_and_reports/plans/square_s6cm.json,json,LLM/action-plan evidence
+demo_plans_and_reports/plans/star_8cm.json,json,LLM/action-plan evidence
+demo_plans_and_reports/plans/triangle_s6cm.json,json,LLM/action-plan evidence
+demo_plans_and_reports/reports/circle_r4cm_validation.json,json,LLM/action-plan evidence
+demo_plans_and_reports/reports/house_8cm_validation.json,json,LLM/action-plan evidence
+demo_plans_and_reports/reports/letter_a_8cm_validation.json,json,LLM/action-plan evidence
+demo_plans_and_reports/reports/square_s6cm_validation.json,json,LLM/action-plan evidence
+demo_plans_and_reports/reports/star_8cm_validation.json,json,LLM/action-plan evidence
+demo_plans_and_reports/reports/triangle_s6cm_validation.json,json,LLM/action-plan evidence
+graphs_by_shape/circle_r4cm/actual_xy_colored_by_force.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/actual_xy_colored_by_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/adaptive_policy.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/adaptive_policy.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/condition_number.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/condition_number.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/execution_log.csv,csv,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/joint_limit_margin.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/joint_limit_margin.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/normal_force.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/normal_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/normal_force_offset.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/normal_force_offset.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/planned_vs_actual_xy.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/planned_vs_actual_xy.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/planned_vs_actual_xy_draw_only.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/planned_vs_actual_xy_draw_only.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/planned_vs_actual_xy_offset_compensated.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/planned_vs_actual_xy_offset_compensated.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/summary.json,json,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/tip_orientation_error.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/tip_orientation_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/tracking_error.png,png,full per-shape result graph/log
+graphs_by_shape/circle_r4cm/tracking_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/actual_xy_colored_by_force.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/actual_xy_colored_by_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/adaptive_policy.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/adaptive_policy.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/condition_number.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/condition_number.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/execution_log.csv,csv,full per-shape result graph/log
+graphs_by_shape/house_8cm/joint_limit_margin.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/joint_limit_margin.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/normal_force.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/normal_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/normal_force_offset.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/normal_force_offset.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/planned_vs_actual_xy.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/planned_vs_actual_xy.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/planned_vs_actual_xy_draw_only.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/planned_vs_actual_xy_draw_only.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/planned_vs_actual_xy_offset_compensated.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/planned_vs_actual_xy_offset_compensated.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/summary.json,json,full per-shape result graph/log
+graphs_by_shape/house_8cm/tip_orientation_error.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/tip_orientation_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/house_8cm/tracking_error.png,png,full per-shape result graph/log
+graphs_by_shape/house_8cm/tracking_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/actual_xy_colored_by_force.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/actual_xy_colored_by_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/adaptive_policy.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/adaptive_policy.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/condition_number.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/condition_number.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/execution_log.csv,csv,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/joint_limit_margin.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/joint_limit_margin.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/normal_force.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/normal_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/normal_force_offset.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/normal_force_offset.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/planned_vs_actual_xy.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/planned_vs_actual_xy.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/planned_vs_actual_xy_draw_only.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/planned_vs_actual_xy_draw_only.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/planned_vs_actual_xy_offset_compensated.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/planned_vs_actual_xy_offset_compensated.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/summary.json,json,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/tip_orientation_error.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/tip_orientation_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/tracking_error.png,png,full per-shape result graph/log
+graphs_by_shape/letter_a_8cm/tracking_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/actual_xy_colored_by_force.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/actual_xy_colored_by_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/adaptive_policy.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/adaptive_policy.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/condition_number.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/condition_number.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/execution_log.csv,csv,full per-shape result graph/log
+graphs_by_shape/square_s6cm/joint_limit_margin.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/joint_limit_margin.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/normal_force.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/normal_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/normal_force_offset.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/normal_force_offset.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/planned_vs_actual_xy.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/planned_vs_actual_xy.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/planned_vs_actual_xy_draw_only.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/planned_vs_actual_xy_draw_only.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/planned_vs_actual_xy_offset_compensated.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/planned_vs_actual_xy_offset_compensated.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/summary.json,json,full per-shape result graph/log
+graphs_by_shape/square_s6cm/tip_orientation_error.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/tip_orientation_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/square_s6cm/tracking_error.png,png,full per-shape result graph/log
+graphs_by_shape/square_s6cm/tracking_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/actual_xy_colored_by_force.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/actual_xy_colored_by_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/adaptive_policy.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/adaptive_policy.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/condition_number.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/condition_number.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/execution_log.csv,csv,full per-shape result graph/log
+graphs_by_shape/star_8cm/joint_limit_margin.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/joint_limit_margin.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/normal_force.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/normal_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/normal_force_offset.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/normal_force_offset.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/planned_vs_actual_xy.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/planned_vs_actual_xy.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/planned_vs_actual_xy_draw_only.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/planned_vs_actual_xy_draw_only.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/planned_vs_actual_xy_offset_compensated.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/planned_vs_actual_xy_offset_compensated.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/summary.json,json,full per-shape result graph/log
+graphs_by_shape/star_8cm/tip_orientation_error.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/tip_orientation_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/star_8cm/tracking_error.png,png,full per-shape result graph/log
+graphs_by_shape/star_8cm/tracking_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/actual_xy_colored_by_force.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/actual_xy_colored_by_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/adaptive_policy.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/adaptive_policy.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/condition_number.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/condition_number.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/execution_log.csv,csv,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/joint_limit_margin.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/joint_limit_margin.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/normal_force.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/normal_force.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/normal_force_offset.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/normal_force_offset.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/planned_vs_actual_xy.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/planned_vs_actual_xy.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/planned_vs_actual_xy_draw_only.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/planned_vs_actual_xy_draw_only.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/planned_vs_actual_xy_offset_compensated.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/planned_vs_actual_xy_offset_compensated.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/summary.json,json,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/tip_orientation_error.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/tip_orientation_error.svg,svg,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/tracking_error.png,png,full per-shape result graph/log
+graphs_by_shape/triangle_s6cm/tracking_error.svg,svg,full per-shape result graph/log
+recommended_for_slides/slide07_circle_planned_vs_actual_draw_only.png,png,curated graph for PPT slides
+recommended_for_slides/slide07_circle_planned_vs_actual_draw_only.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide07_star_planned_vs_actual_draw_only.png,png,curated graph for PPT slides
+recommended_for_slides/slide07_star_planned_vs_actual_draw_only.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide09_star_adaptive_dls.png,png,curated graph for PPT slides
+recommended_for_slides/slide09_star_adaptive_dls.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide09_star_condition_number.png,png,curated graph for PPT slides
+recommended_for_slides/slide09_star_condition_number.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide09_star_joint_limit_margin.png,png,curated graph for PPT slides
+recommended_for_slides/slide09_star_joint_limit_margin.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide10_star_force_colored_trajectory.png,png,curated graph for PPT slides
+recommended_for_slides/slide10_star_force_colored_trajectory.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide10_star_normal_force.png,png,curated graph for PPT slides
+recommended_for_slides/slide10_star_normal_force.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide10_star_normal_force_offset.png,png,curated graph for PPT slides
+recommended_for_slides/slide10_star_normal_force_offset.svg,svg,curated graph for PPT slides
+recommended_for_slides/slide11_letter_a_planned_vs_actual_draw_only.png,png,curated graph for PPT slides
+recommended_for_slides/slide11_letter_a_planned_vs_actual_draw_only.svg,svg,curated graph for PPT slides
+summary_graphs/summary_contact_force_by_shape.png,png,aggregate result graph
+summary_graphs/summary_contact_force_by_shape.svg,svg,aggregate result graph
+summary_graphs/summary_orientation_error_by_shape.png,png,aggregate result graph
+summary_graphs/summary_orientation_error_by_shape.svg,svg,aggregate result graph
+summary_graphs/summary_tracking_rmse_by_shape.png,png,aggregate result graph
+summary_graphs/summary_tracking_rmse_by_shape.svg,svg,aggregate result graph
+tables/controller_architecture_summary.md,md,table for PPT/report
+tables/controller_architecture_summary.tex,tex,table for PPT/report
+tables/controller_architecture_summary_table.png,png,table for PPT/report
+tables/controller_architecture_summary_table.svg,svg,table for PPT/report
+tables/demo_commands.csv,csv,table for PPT/report
+tables/demo_commands.md,md,table for PPT/report
+tables/demo_shape_metrics.csv,csv,table for PPT/report
+tables/demo_shape_metrics.md,md,table for PPT/report
+tables/demo_shape_metrics.tex,tex,table for PPT/report
+tables/demo_shape_metrics_table.png,png,table for PPT/report
+tables/demo_shape_metrics_table.svg,svg,table for PPT/report
+video/circle.mp4,mp4,representative Isaac Sim demo video
+video/square.mp4,mp4,representative Isaac Sim demo video
+video/star.mp4,mp4,representative Isaac Sim demo video
+video/star_entire.mp4,mp4,representative full-scene Isaac Sim demo video
+video/triangle.mp4,mp4,representative Isaac Sim demo video

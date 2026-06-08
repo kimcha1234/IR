@@ -1,0 +1,76 @@
+{
+  "cases": [
+    {
+      "case_id": "circle_r4cm",
+      "title": "Circle",
+      "command": "중앙에 반지름 4cm짜리 원을 그려줘",
+      "plan_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/circle_r4cm.json",
+      "validation_report_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/reports/circle_r4cm_validation.json",
+      "isaac_output_dir": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/circle_r4cm",
+      "isaac_command": "TERM=xterm /home/kimchangyeol/IsaacLab/isaaclab.sh -p /home/kimchangyeol/IsaacLab/IR/examples/run_jade_isaac.py --mode contact --plan /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/circle_r4cm.json --out /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/circle_r4cm",
+      "validation_ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "case_id": "square_s6cm",
+      "title": "Square",
+      "command": "중앙에 한 변 6cm짜리 사각형을 그려줘",
+      "plan_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/square_s6cm.json",
+      "validation_report_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/reports/square_s6cm_validation.json",
+      "isaac_output_dir": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/square_s6cm",
+      "isaac_command": "TERM=xterm /home/kimchangyeol/IsaacLab/isaaclab.sh -p /home/kimchangyeol/IsaacLab/IR/examples/run_jade_isaac.py --mode contact --plan /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/square_s6cm.json --out /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/square_s6cm",
+      "validation_ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "case_id": "triangle_s6cm",
+      "title": "Triangle",
+      "command": "중앙에 한 변 6cm짜리 삼각형을 그려줘",
+      "plan_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/triangle_s6cm.json",
+      "validation_report_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/reports/triangle_s6cm_validation.json",
+      "isaac_output_dir": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/triangle_s6cm",
+      "isaac_command": "TERM=xterm /home/kimchangyeol/IsaacLab/isaaclab.sh -p /home/kimchangyeol/IsaacLab/IR/examples/run_jade_isaac.py --mode contact --plan /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/triangle_s6cm.json --out /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/triangle_s6cm",
+      "validation_ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "case_id": "letter_a_8cm",
+      "title": "Letter A",
+      "command": "중앙에 알파벳 A를 8cm 크기로 그려줘",
+      "plan_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/letter_a_8cm.json",
+      "validation_report_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/reports/letter_a_8cm_validation.json",
+      "isaac_output_dir": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/letter_a_8cm",
+      "isaac_command": "TERM=xterm /home/kimchangyeol/IsaacLab/isaaclab.sh -p /home/kimchangyeol/IsaacLab/IR/examples/run_jade_isaac.py --mode contact --plan /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/letter_a_8cm.json --out /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/letter_a_8cm",
+      "validation_ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "case_id": "house_8cm",
+      "title": "House",
+      "command": "중앙에 8cm 집 모양을 그려줘",
+      "plan_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/house_8cm.json",
+      "validation_report_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/reports/house_8cm_validation.json",
+      "isaac_output_dir": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/house_8cm",
+      "isaac_command": "TERM=xterm /home/kimchangyeol/IsaacLab/isaaclab.sh -p /home/kimchangyeol/IsaacLab/IR/examples/run_jade_isaac.py --mode contact --plan /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/house_8cm.json --out /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/house_8cm",
+      "validation_ok": true,
+      "errors": [],
+      "warnings": []
+    },
+    {
+      "case_id": "star_8cm",
+      "title": "Star",
+      "command": "중앙에 8cm 별을 그려줘",
+      "plan_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/star_8cm.json",
+      "validation_report_path": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/reports/star_8cm_validation.json",
+      "isaac_output_dir": "/home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/star_8cm",
+      "isaac_command": "TERM=xterm /home/kimchangyeol/IsaacLab/isaaclab.sh -p /home/kimchangyeol/IsaacLab/IR/examples/run_jade_isaac.py --mode contact --plan /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/plans/star_8cm.json --out /home/kimchangyeol/IsaacLab/IR/outputs/demo_showcase/isaac_runs/star_8cm",
+      "validation_ok": true,
+      "errors": [],
+      "warnings": []
+    }
+  ]
+}

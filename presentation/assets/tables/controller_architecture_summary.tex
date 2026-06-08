@@ -1,0 +1,16 @@
+\begin{table}[H]
+\centering
+\caption{Implemented robotics/control components.}
+\small
+\begin{tabularx}{\linewidth}{l l X}
+\toprule
+Component & Method & Purpose \\
+\midrule
+Trajectory generation & Quintic Cartesian sampling & Generate smooth drawing targets from unit actions \\
+Kinematics & FK and Jacobian & Compute pen-tip pose and local Cartesian motion \\
+Inverse kinematics & Damped Least Squares & Convert Cartesian error to joint commands near singularities \\
+Contact control & Normal-force admittance & Adjust only the paper-normal direction during contact \\
+Diagnostics & JADE metrics & Monitor condition number, damping, joint limits, and tracking error \\
+\bottomrule
+\end{tabularx}
+\end{table}
